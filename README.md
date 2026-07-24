@@ -1,1 +1,1 @@
-# load-balancing-algo
+# go-lab
