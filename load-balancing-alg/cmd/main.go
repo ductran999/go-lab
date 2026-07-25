@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"go-lab/load-balancing-alg/internal/app"
 	"os"
 
-	"github.com/DucTran999/load-balancing-algo/internal/app"
 	"github.com/rs/zerolog"
 )
 

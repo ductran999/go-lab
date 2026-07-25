@@ -1,4 +1,4 @@
-module github.com/DucTran999/load-balancing-algo
+module go-lab
 
 go 1.23.1
 

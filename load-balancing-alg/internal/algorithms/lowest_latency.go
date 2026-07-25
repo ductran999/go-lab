@@ -1,15 +1,14 @@
 package algorithms
 
 import (
+	"go-lab/load-balancing-alg/internal/errs"
+	"go-lab/load-balancing-alg/pkg/backend"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
 	"time"
-
-	"github.com/DucTran999/load-balancing-algo/internal/errs"
-	"github.com/DucTran999/load-balancing-algo/pkg/backend"
 )
 
 type lowestLatencyAlg struct {

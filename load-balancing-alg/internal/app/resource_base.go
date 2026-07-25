@@ -3,14 +3,15 @@ package app
 import (
 	"log"
 
-	loadbalancer "github.com/DucTran999/load-balancing-algo/internal/load_blancer"
-	"github.com/DucTran999/load-balancing-algo/internal/tools"
-	"github.com/DucTran999/load-balancing-algo/pkg/backend"
+	loadbalancer "go-lab/load-balancing-alg/internal/load_blancer"
+	"go-lab/load-balancing-alg/internal/tools"
+	"go-lab/load-balancing-alg/pkg/backend"
+
 	"github.com/rs/zerolog"
 )
 
-func RunLowestLatencyApp(logger zerolog.Logger) {
-	log.Println("[INFO] running lowest latency algorithm app")
+func RunResourceBaseApp(logger zerolog.Logger) {
+	log.Println("[INFO] running resource base algorithm app")
 
 	// Initialize the backend builder and configure number of backend servers
 	backendBuilder := backend.NewBackendBuilder(logger)
@@ -22,8 +23,8 @@ func RunLowestLatencyApp(logger zerolog.Logger) {
 		logger.Fatal().Msgf("failed when build backends: %v", err)
 	}
 
-	// Create a new load balancer on localhost:8080 using the backends and using lowest latency algorithm
-	lb, err := loadbalancer.NewLoadBalancer("localhost", 8080, backends, loadbalancer.LowestLatency)
+	// Create a new load balancer on localhost:8080 using the backends and using resource base algorithm
+	lb, err := loadbalancer.NewLoadBalancer("localhost", 8080, backends, loadbalancer.ResourceBase)
 	if err != nil {
 		logger.Fatal().Msgf("failed to init loadbalancer: %v", err)
 	}

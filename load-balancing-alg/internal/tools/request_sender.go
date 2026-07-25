@@ -2,11 +2,11 @@ package tools
 
 import (
 	"fmt"
+	"go-lab/load-balancing-alg/pkg/requester"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/DucTran999/load-balancing-algo/pkg/requester"
 	"github.com/go-faker/faker/v4"
 	"github.com/rs/zerolog/log"
 )

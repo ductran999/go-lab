@@ -3,12 +3,12 @@ package loadbalancer
 import (
 	"errors"
 	"fmt"
+	"go-lab/load-balancing-alg/pkg/backend"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/DucTran999/load-balancing-algo/pkg/backend"
 	"github.com/rs/zerolog/log"
 )
 

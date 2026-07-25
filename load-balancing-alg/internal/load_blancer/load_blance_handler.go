@@ -3,9 +3,9 @@ package loadbalancer
 import (
 	"net/http"
 
-	"github.com/DucTran999/load-balancing-algo/internal/algorithms"
-	"github.com/DucTran999/load-balancing-algo/internal/errs"
-	"github.com/DucTran999/load-balancing-algo/pkg/backend"
+	"go-lab/load-balancing-alg/internal/algorithms"
+	"go-lab/load-balancing-alg/internal/errs"
+	"go-lab/load-balancing-alg/pkg/backend"
 )
 
 type AlgorithmImplementer interface {

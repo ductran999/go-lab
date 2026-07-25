@@ -3,14 +3,15 @@ package app
 import (
 	"log"
 
-	loadbalancer "github.com/DucTran999/load-balancing-algo/internal/load_blancer"
-	"github.com/DucTran999/load-balancing-algo/internal/tools"
-	"github.com/DucTran999/load-balancing-algo/pkg/backend"
+	loadbalancer "go-lab/load-balancing-alg/internal/load_blancer"
+	"go-lab/load-balancing-alg/internal/tools"
+	"go-lab/load-balancing-alg/pkg/backend"
+
 	"github.com/rs/zerolog"
 )
 
-func RunSourceIPHashApp(logger zerolog.Logger) {
-	log.Println("[INFO] running source ip hash algorithm app")
+func RunRoundRobinApp(logger zerolog.Logger) {
+	log.Println("[INFO] running round-robin app")
 
 	// Initialize the backend builder and configure number of backend servers
 	backendBuilder := backend.NewBackendBuilder(logger)
@@ -22,8 +23,8 @@ func RunSourceIPHashApp(logger zerolog.Logger) {
 		logger.Fatal().Msgf("failed when build backends: %v", err)
 	}
 
-	// Create a new load balancer on localhost:8080 using the backends and source ip algorithm
-	lb, err := loadbalancer.NewLoadBalancer("localhost", 8080, backends, loadbalancer.SourceIPHash)
+	// Create a new load balancer on localhost:8080 using the backends and round-robin algorithm
+	lb, err := loadbalancer.NewLoadBalancer("localhost", 8080, backends, loadbalancer.RoundRobin)
 	if err != nil {
 		logger.Fatal().Msgf("failed to init loadbalancer: %v", err)
 	}
