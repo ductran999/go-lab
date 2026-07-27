@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test SSE</title>
+  </head>
+  <body>
+    <h2 id="status">Connecting...</h2>
+    <progress id="progress" value="0" max="100"></progress>
+
+    <script>
+      const computeId = "cpt-12345";
+      const eventSource = new EventSource(
+        `http://localhost:8080/computes/${computeId}/stream`,
+      );
+
+      eventSource.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        document.getElementById("status").innerText = data.message;
+        document.getElementById("progress").value = data.progress_percentage;
+
+        if (data.step === "COMPLETED" || data.step === "FAILED") {
+          eventSource.close();
+        }
+      };
+
+      eventSource.onerror = function (err) {
+        console.error("Lỗi SSE:", err);
+      };
+    </script>
+  </body>
+</html>
