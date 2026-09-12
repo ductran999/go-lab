@@ -13,6 +13,7 @@ func main() {
 	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
 
 	appName := flag.String("app-name", "rr", "Load balance app to run")
+
 	flag.Parse()
 
 	switch *appName {

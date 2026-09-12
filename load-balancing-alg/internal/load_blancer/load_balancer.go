@@ -80,27 +80,36 @@ func NewLoadBalancer(
 func (lb *loadBalancer) Start() error {
 	// Start HTTP server in a goroutine
 	go func() {
-		if err := lb.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		err := lb.server.ListenAndServe()
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error().Err(err).Msg("failed to start load balancer")
 		}
 	}()
 
 	// Wait for server to become available
 	address := fmt.Sprintf("localhost:%d", lb.port)
+
 	for {
 		// Use a 3s default dial timeout, overrideable via config
 		dialer := net.Dialer{
 			Timeout: 3 * time.Second,
 		}
-		if conn, err := dialer.Dial("tcp", address); err == nil {
-			if errCloseConn := conn.Close(); errCloseConn != nil {
-				log.Warn().Err(errCloseConn).Msg("failed to close tcp conn")
+
+		conn, err := dialer.Dial("tcp", address)
+		if err == nil {
+			closeErr := conn.Close()
+			if closeErr != nil {
+				log.Warn().Err(closeErr).Msg("failed to close tcp conn")
 			}
+
 			break
 		}
+
 		time.Sleep(100 * time.Millisecond) // prevent tight loop
 	}
 
 	log.Info().Msgf("load balancer running on %v", address)
+
 	return nil
 }

@@ -24,9 +24,12 @@ func GracefulShutdown(logger zerolog.Logger, shutdownTasks ...func(ctx context.C
 	defer cancel()
 
 	cleanExit := true
+
 	for _, task := range shutdownTasks {
-		if err := task(ctx); err != nil {
+		err := task(ctx)
+		if err != nil {
 			logger.Warn().Err(err).Msg("shutdown task error")
+
 			cleanExit = false
 		}
 	}

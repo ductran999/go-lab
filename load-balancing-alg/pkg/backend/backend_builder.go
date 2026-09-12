@@ -40,6 +40,7 @@ func NewBackendBuilder(logger zerolog.Logger) *backendBuilder {
 // It uses the maximum of num and DefaultNumberBackends, logging a warning if num is invalid.
 func (b *backendBuilder) SetNumberOfBackends(num int) {
 	b.numOfBackends = max(num, DefaultNumberBackends)
+
 	if num <= 0 {
 		// Log warning when an invalid (non-positive) number is provided
 		b.logger.Warn().
@@ -50,32 +51,40 @@ func (b *backendBuilder) SetNumberOfBackends(num int) {
 
 func (b *backendBuilder) EnableRandomWeight() {
 	b.randomWeight = true
+
 	b.logger.Info().Msg("random weight enabled for backends")
 }
 
 func (b *backendBuilder) Build() ([]*SimpleHTTPServer, error) {
 	var err error
+
 	b.logger.Info().Msg("building backends...")
 
 	b.backends = make([]*SimpleHTTPServer, b.numOfBackends)
+
 	for i := range b.numOfBackends {
-		if b.backends[i], err = b.setupBackend(i); err != nil {
+		b.backends[i], err = b.setupBackend(i)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	b.logger.Info().Msg("all backends are ready")
+
 	return b.backends, nil
 }
 
 func (b *backendBuilder) ShutdownAllBackends(ctx context.Context) error {
 	b.logger.Info().Msg("shutdown backends ...")
+
 	wg := sync.WaitGroup{}
 
 	for i := range b.backends {
 		wg.Add(1)
+
 		go func(idx int) {
 			defer wg.Done()
+
 			err := b.backends[idx].Stop(ctx)
 			if err != nil {
 				b.logger.Error().Err(err).Msgf("failed to shutdown server %d\n", idx)
@@ -85,7 +94,9 @@ func (b *backendBuilder) ShutdownAllBackends(ctx context.Context) error {
 
 	// Wait for all server shutdown completely
 	wg.Wait()
+
 	b.logger.Info().Msg("all backends shutdown")
+
 	return nil
 }
 
@@ -94,12 +105,15 @@ func (b *backendBuilder) setupBackend(id int) (*SimpleHTTPServer, error) {
 
 	for i := range maxRetries {
 		port := b.getRandomPort()
+
 		if !b.isPortAvailable("localhost", port) {
 			b.logger.Warn().Msgf("retry %d/%d: port %d not available", i+1, maxRetries, port)
+
 			continue
 		}
 
 		be := NewSimpleHTTPServer("localhost", port, id, b.createBackendWeight())
+
 		errChan := make(chan error, 1)
 
 		go func() {
@@ -118,7 +132,9 @@ func (b *backendBuilder) setupBackend(id int) (*SimpleHTTPServer, error) {
 // It returns true if the server is ready or gracefully closed, false on timeout or error.
 func (b *backendBuilder) waitForServerReady(port int, errChan <-chan error, id int) bool {
 	address := fmt.Sprintf("localhost:%d", port)
+
 	timeout := time.After(5 * time.Second)
+
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
@@ -128,21 +144,27 @@ func (b *backendBuilder) waitForServerReady(port int, errChan <-chan error, id i
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				b.logger.Error().
 					Msgf("server %d o %s failed: %v", id, address, err)
+
 				return false
 			}
+
 			return true
 
 		case <-timeout:
 			b.logger.Error().
 				Msgf("timeout waiting for server %d on %s", id, address)
+
 			return false
 
 		case <-ticker.C:
-			if conn, err := net.DialTimeout("tcp", address, time.Second); err == nil {
-				if err := conn.Close(); err != nil {
+			conn, dialErr := net.DialTimeout("tcp", address, time.Second)
+			if dialErr == nil {
+				closeErr := conn.Close()
+				if closeErr != nil {
 					b.logger.Warn().
-						Msgf("failed to close TCP connection on %s: %v", address, err)
+						Msgf("failed to close TCP connection on %s: %v", address, closeErr)
 				}
+
 				return true
 			}
 		}
@@ -156,9 +178,10 @@ func (b *backendBuilder) isPortAvailable(host string, port int) bool {
 		return false
 	}
 
-	if err := ln.Close(); err != nil {
+	closeErr := ln.Close()
+	if closeErr != nil {
 		b.logger.Warn().
-			Msgf("closing probe listener on %s:%d failed: %v", host, port, err)
+			Msgf("closing probe listener on %s:%d failed: %v", host, port, closeErr)
 	}
 
 	return true
@@ -173,5 +196,6 @@ func (b *backendBuilder) createBackendWeight() int {
 	if b.randomWeight {
 		return rand.IntN(5) + 1 //nolint:gosec
 	}
+
 	return DefaultBackendWeight
 }

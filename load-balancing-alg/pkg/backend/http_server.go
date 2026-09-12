@@ -42,7 +42,7 @@ type SimpleHTTPServer struct {
 	server     *http.Server
 }
 
-// Constructor function
+// NewSimpleHTTPServer creates a new SimpleHTTPServer bound to host:port.
 func NewSimpleHTTPServer(host string, port int, id, weight int) *SimpleHTTPServer {
 	return &SimpleHTTPServer{
 		host:   host,
@@ -61,12 +61,14 @@ func (s *SimpleHTTPServer) GetWeight() int {
 func (s *SimpleHTTPServer) GetConnection() int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
 	return s.connection
 }
 
 func (s *SimpleHTTPServer) GetCPULoad() float64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
 	return s.cpuLoad
 }
 
@@ -103,6 +105,7 @@ func (s *SimpleHTTPServer) Start() error {
 	}
 
 	log.Info().Msgf("server running on http://%s , weight: %d", addr, s.weight)
+
 	return s.server.ListenAndServe()
 }
 
@@ -133,7 +136,8 @@ func (s *SimpleHTTPServer) reqHandler(w http.ResponseWriter, r *http.Request) {
 	s.cpuLoad = s.simulateCPULoad()
 	s.mutex.Unlock()
 
-	if _, err := fmt.Fprintf(w, "Server %d, handle request %s!", s.id, reqID); err != nil {
+	_, err := fmt.Fprintf(w, "Server %d, handle request %s!", s.id, reqID)
+	if err != nil {
 		log.Error().Err(err).Msg("failed to write response")
 	}
 }
@@ -157,5 +161,6 @@ func (s *SimpleHTTPServer) simulateCPULoad() float64 {
 
 	// Generate a float in [0.1, 100.0)
 	f := r.Float64()*(max-min) + min
+
 	return math.Round(f*100) / 100
 }

@@ -28,9 +28,11 @@ func NewLoadBalancerHandler(
 	if err != nil {
 		return nil, err
 	}
+
 	hdl.algorithmImpl = algorithmImpl
 
-	if err = hdl.validateConfig(); err != nil {
+	err = hdl.validateConfig()
+	if err != nil {
 		return nil, err
 	}
 

@@ -31,7 +31,8 @@ func RunWeightRoundRobinApp(logger zerolog.Logger) {
 	}
 
 	// Start the load balancer asynchronously
-	if err := lb.Start(); err != nil {
+	err = lb.Start()
+	if err != nil {
 		logger.Fatal().Msgf("failed to start load balancer: %v", err)
 	}
 

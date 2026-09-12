@@ -65,6 +65,7 @@ func (lb *sourceIPHash) getClientIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		log.Printf("[ERROR] failed to get client ip")
+
 		host = r.RemoteAddr // keep real IP
 	}
 

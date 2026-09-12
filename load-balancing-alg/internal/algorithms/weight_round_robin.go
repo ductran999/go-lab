@@ -81,6 +81,7 @@ func (lb *weightedRoundRobin) getNextBackend() url.URL {
 
 	lb.currentWeight--
 	nextBackend := lb.backends[lb.currentIndex]
+
 	return *nextBackend.GetUrl()
 }
 

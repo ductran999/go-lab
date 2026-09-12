@@ -49,8 +49,10 @@ func (r *requester) sendParallel(fn DoRequestCallback) {
 
 	for i := range r.config.NumOfRequest {
 		wg.Add(1)
+
 		go func(idx int) {
 			defer wg.Done()
+
 			fn(c, idx)
 		}(i)
 

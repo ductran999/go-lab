@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Cấu trúc dữ liệu gửi qua SSE
+// ProvisionEvent is the payload streamed to clients over SSE.
 type ProvisionEvent struct {
 	Step               string `json:"step"`
 	ProgressPercentage int    `json:"progress_percentage"`
@@ -40,8 +41,10 @@ func main() {
 		computeID := c.Param("id")
 
 		ch, exists := computeStore[computeID]
+
 		if !exists {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Compute not found or already finished"})
+
 			return
 		}
 
@@ -67,10 +70,12 @@ func main() {
 			if err != nil {
 				return false
 			}
+
 			c.Writer.Flush()
 
 			if event.Step == "COMPLETED" || event.Step == "FAILED" {
 				delete(computeStore, computeID)
+
 				return false
 			}
 
@@ -78,17 +83,23 @@ func main() {
 		})
 	})
 
-	r.Run(":8080")
+	err := r.Run(":8080")
+	if err != nil {
+		log.Fatalf("failed to run server: %v", err)
+	}
 }
 
 func simulateProvisioning(computeID string) {
 	ch := computeStore[computeID]
+
 	if ch == nil {
 		return
 	}
+
 	defer close(ch)
 
 	time.Sleep(2 * time.Second)
+
 	ch <- ProvisionEvent{
 		Step:               "CREATING_EXEC_NAMESPACE",
 		ProgressPercentage: 25,
@@ -96,6 +107,7 @@ func simulateProvisioning(computeID string) {
 	}
 
 	time.Sleep(2 * time.Second)
+
 	ch <- ProvisionEvent{
 		Step:               "CREATING_OPERATOR_NAMESPACE",
 		ProgressPercentage: 50,
@@ -103,6 +115,7 @@ func simulateProvisioning(computeID string) {
 	}
 
 	time.Sleep(3 * time.Second)
+
 	ch <- ProvisionEvent{
 		Step:               "INSTALLING_OPERATOR",
 		ProgressPercentage: 75,
@@ -110,6 +123,7 @@ func simulateProvisioning(computeID string) {
 	}
 
 	time.Sleep(2 * time.Second)
+
 	ch <- ProvisionEvent{
 		Step:               "COMPLETED",
 		ProgressPercentage: 100,

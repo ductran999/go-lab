@@ -58,6 +58,7 @@ func (lc *leastConnectionAlg) getNextBackend() url.URL {
 
 	for idx := 1; idx < len(lc.backends); idx++ {
 		backend := lc.backends[idx]
+
 		backendConnections = append(backendConnections, backend.GetConnection())
 		if minConnection > lc.backends[idx].GetConnection() {
 			minConnection = backend.GetConnection()

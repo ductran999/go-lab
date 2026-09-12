@@ -35,6 +35,7 @@ func (r *requestSender) SendNow() {
 // It closes the response body and handles errors appropriately.
 func (r *requestSender) sendRequest(c http.Client, reqID int) {
 	endpoint := fmt.Sprintf("http://localhost:8080/req/%d", reqID)
+
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to make new request")
@@ -57,5 +58,5 @@ func (r *requestSender) sendRequest(c http.Client, reqID int) {
 		return
 	}
 
-	log.Printf(string(body))
+	log.Printf("%s", body)
 }
