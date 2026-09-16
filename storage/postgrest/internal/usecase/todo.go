@@ -19,7 +19,13 @@ type TodoUseCase struct {
 }
 
 // NewTodoUseCase builds a TodoUseCase with the given repository.
+// It panics on a nil repository: a missing dependency is a programmer
+// error that must surface at wiring time, not as a nil dereference later.
 func NewTodoUseCase(repo domain.TodoRepository) *TodoUseCase {
+	if repo == nil {
+		panic("usecase: nil TodoRepository")
+	}
+
 	return &TodoUseCase{repo: repo}
 }
 

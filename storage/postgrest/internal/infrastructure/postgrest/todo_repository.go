@@ -26,7 +26,13 @@ type TodoRepository struct {
 }
 
 // NewTodoRepository builds a TodoRepository using the given client.
+// It panics on a nil client: a missing dependency is a programmer
+// error that must surface at wiring time, not as a nil dereference later.
 func NewTodoRepository(client *Client) *TodoRepository {
+	if client == nil {
+		panic("postgrest: nil Client")
+	}
+
 	return &TodoRepository{client: client}
 }
 
