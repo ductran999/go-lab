@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16
     container_name: pg
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -30,15 +31,17 @@ services:
 
   postgrest:
     image: postgrest/postgrest:latest
+    container_name: postgrest
     ports:
       - "3000:3000"
     environment:
-      PGRST_DB_URI: postgres://authenticator:mysecretpassword@db:5432/${DB_NAME}
+      PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD:-mysecretpassword}@db:5432/${DB_NAME}
       PGRST_DB_SCHEMA: ${PGRST_SCHEMA}
       PGRST_DB_ANON_ROLE: ${PGRST_ANON_ROLE}
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:

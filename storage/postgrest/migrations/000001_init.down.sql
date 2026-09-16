@@ -1,0 +1,4 @@
+REVOKE ALL ON api.todos FROM web_anon;
+REVOKE USAGE ON SCHEMA api FROM web_anon;
+DROP TABLE IF EXISTS api.todos;
+DROP SCHEMA IF EXISTS api;
