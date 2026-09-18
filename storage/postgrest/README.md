@@ -3,6 +3,9 @@
 Stack: Postgres 16 + PostgREST + `migrate/migrate` (one-shot migration),
 plus a small Go client demonstrating CRUD over REST.
 
+Research notes live in [`docs/`](docs/): basics, auth model, decision
+log, gotchas.
+
 ```bash
 # Change DIR
 $ cd storage/postgrest
@@ -54,12 +57,12 @@ The client is split into layers with dependencies pointing inward:
 ```
 cmd/main.go                          # delivery + composition root (wiring only)
 internal/domain/todo.go              # entity + TodoRepository contract, no deps
-internal/usecase/todo.go             # business rules (e.g. task validation)
-internal/infrastructure/postgrest/   # PostgREST HTTP implementation (stdlib only)
+internal/usecase/todo.go             # business rules (task + tenant validation)
+internal/infrastructure/postgrest/   # PostgREST HTTP implementation (shared httpclient)
 ```
 
 `cmd/main.go` wires `postgrest.NewTodoRepository` into
-`usecase.NewTodoUseCase` and runs one full CRUD cycle:
+`usecase.NewTodoUseCase` and runs one full CRUD cycle for tenant 1:
 create → list → patch (mark done) → delete → list.
 To target another data source, add a new `domain.TodoRepository`
 implementation and swap the constructor in `cmd/main.go` — domain and
@@ -67,20 +70,22 @@ use case code stay untouched.
 
 ```bash
 make run
-# or
+# or anonymous:
 POSTGREST_URL=http://localhost:3000 go run ./cmd/main.go
+# or as tenant 1 via JWT (see docs/02-auth-model.md):
+POSTGREST_TOKEN=<jwt role=tenant_user tenant_id=1> go run ./cmd/main.go
 ```
 
-Sample output:
+Sample output (structured logs via `log/slog`):
 
 ```
-== PostgREST CRUD demo ==
-1. CREATED: {ID:2 Done:false Task:Learn PostgREST with Go Due:<nil>}
-2. LIST (1 todos):
-   - #2 done=false task="Learn PostgREST with Go"
-3. UPDATED: {ID:2 Done:true Task:... Due:<nil>}
-4. DELETED todo #2
-5. REMAINING (0 todos)
+INFO starting PostgREST CRUD demo tenant=1
+INFO todo created id=2 done=false task="Learn PostgREST with Go" tenant=1
+INFO todos listed count=1
+INFO todo id=2 done=false task="Learn PostgREST with Go"
+INFO todo updated id=2 done=true task="Learn PostgREST with Go"
+INFO todo deleted id=2
+INFO demo finished remaining=0
 ```
 
 ## 4. Cleanup

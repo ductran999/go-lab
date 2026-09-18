@@ -3,6 +3,7 @@ module go-lab
 go 1.25.0
 
 require (
+	github.com/ductran999/shared-pkg v0.0.0-20260911030000-1ee29ad403f2
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-faker/faker/v4 v4.6.1
 	github.com/gorilla/mux v1.8.1

@@ -38,6 +38,7 @@ services:
       PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD:-mysecretpassword}@db:5432/${DB_NAME}
       PGRST_DB_SCHEMA: ${PGRST_SCHEMA}
       PGRST_DB_ANON_ROLE: ${PGRST_ANON_ROLE}
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:-dev-secret-change-me-0123456789abcdef}
     depends_on:
       db:
         condition: service_healthy

@@ -36,10 +36,10 @@ func NewTodoRepository(client *Client) *TodoRepository {
 	return &TodoRepository{client: client}
 }
 
-// Create inserts a new todo and returns its representation.
-func (r *TodoRepository) Create(ctx context.Context, task string) (domain.Todo, error) {
+// Create inserts a new todo for the tenant and returns its representation.
+func (r *TodoRepository) Create(ctx context.Context, task string, tenantID int) (domain.Todo, error) {
 	data, err := r.client.Do(ctx, http.MethodPost, "/todos", nil,
-		map[string]any{"task": task}, "return=representation")
+		map[string]any{"task": task, "tenant_id": tenantID}, "return=representation")
 	if err != nil {
 		return domain.Todo{}, err
 	}

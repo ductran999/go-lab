@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
@@ -24,8 +25,13 @@ func baseURL() string {
 	return "http://localhost:3000"
 }
 
+// demoTenantID scopes demo rows to tenant 1. POSTGREST_TOKEN optionally
+// authenticates as that tenant (see docs/02-auth-model.md); empty runs
+// anonymous via the lab open policy.
+const demoTenantID = 1
+
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "FAILED:", err)
+	slog.Error("demo failed", "error", err)
 
 	os.Exit(1)
 }
@@ -34,28 +40,28 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	client := postgrest.NewClient(baseURL())
+	client := postgrest.NewClient(baseURL(), os.Getenv("POSTGREST_TOKEN"))
 	repo := postgrest.NewTodoRepository(client)
 	todos := usecase.NewTodoUseCase(repo)
 
-	fmt.Println("== PostgREST CRUD demo ==")
+	slog.Info("starting PostgREST CRUD demo", "tenant", demoTenantID)
 
-	created, err := todos.CreateTodo(ctx, "Learn PostgREST with Go")
+	created, err := todos.CreateTodo(ctx, "Learn PostgREST with Go", demoTenantID)
 	if err != nil {
 		fail(fmt.Errorf("CREATE: %w", err))
 	}
 
-	fmt.Printf("1. CREATED: %+v\n", created)
+	slog.Info("todo created", "id", created.ID, "done", created.Done, "task", created.Task, "tenant", created.TenantID)
 
 	list, err := todos.ListTodos(ctx)
 	if err != nil {
 		fail(fmt.Errorf("LIST: %w", err))
 	}
 
-	fmt.Printf("2. LIST (%d todos):\n", len(list))
+	slog.Info("todos listed", "count", len(list))
 
 	for _, t := range list {
-		fmt.Printf("   - #%d done=%v task=%q\n", t.ID, t.Done, t.Task)
+		slog.Info("todo", "id", t.ID, "done", t.Done, "task", t.Task)
 	}
 
 	updated, err := todos.CompleteTodo(ctx, created.ID, true)
@@ -63,19 +69,19 @@ func main() {
 		fail(fmt.Errorf("PATCH: %w", err))
 	}
 
-	fmt.Printf("3. UPDATED: %+v\n", updated)
+	slog.Info("todo updated", "id", updated.ID, "done", updated.Done, "task", updated.Task)
 
 	err = todos.RemoveTodo(ctx, created.ID)
 	if err != nil {
 		fail(fmt.Errorf("DELETE: %w", err))
 	}
 
-	fmt.Printf("4. DELETED todo #%d\n", created.ID)
+	slog.Info("todo deleted", "id", created.ID)
 
 	remaining, err := todos.ListTodos(ctx)
 	if err != nil {
 		fail(fmt.Errorf("LIST after delete: %w", err))
 	}
 
-	fmt.Printf("5. REMAINING (%d todos)\n", len(remaining))
+	slog.Info("demo finished", "remaining", len(remaining))
 }

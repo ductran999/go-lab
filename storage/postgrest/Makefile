@@ -4,7 +4,9 @@ include .env
 export
 endif
 
-.PHONY: default tidy help up down clean logs ps run test-api
+.PHONY: default tidy help up down clean logs ps run test-api token
+
+TENANT ?= 1
 
 default: ## show all available tasks
 	@make help
@@ -41,3 +43,6 @@ test-api: ## smoke test PostgREST with curl (GET + POST + DELETE)
 		-H 'Content-Type: application/json' \
 		-H 'Prefer: return=representation' \
 		-d '{"task":"smoke test"}'; echo
+
+token: ## print dev JWT for TENANT (default 1): make token TENANT=2
+	@TENANT="$(TENANT)" python3 -c 'import base64,hashlib,hmac,json,os; s=os.environ["PGRST_JWT_SECRET"]; t=int(os.environ.get("TENANT","1")); e=lambda d: base64.urlsafe_b64encode(json.dumps(d).encode()).rstrip(b"=").decode(); h=e({"alg":"HS256","typ":"JWT"}); p=e({"role":"tenant_user","tenant_id":t}); print(h+"."+p+"."+base64.urlsafe_b64encode(hmac.new(s.encode(),(h+"."+p).encode(),hashlib.sha256).digest()).rstrip(b"=").decode())'

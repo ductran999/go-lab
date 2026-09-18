@@ -13,6 +13,10 @@ import (
 // ErrTaskRequired is returned when a todo task is blank.
 var ErrTaskRequired = errors.New("task is required")
 
+// ErrTenantRequired is returned when the tenant id is missing.
+// Every todo must belong to a tenant (RLS isolation).
+var ErrTenantRequired = errors.New("tenant id is required")
+
 // TodoUseCase orchestrates Todo operations on top of a domain.TodoRepository.
 type TodoUseCase struct {
 	repo domain.TodoRepository
@@ -29,13 +33,17 @@ func NewTodoUseCase(repo domain.TodoRepository) *TodoUseCase {
 	return &TodoUseCase{repo: repo}
 }
 
-// CreateTodo validates the task description, then persists a new todo.
-func (u *TodoUseCase) CreateTodo(ctx context.Context, task string) (domain.Todo, error) {
+// CreateTodo validates the input, then persists a new todo for the tenant.
+func (u *TodoUseCase) CreateTodo(ctx context.Context, task string, tenantID int) (domain.Todo, error) {
 	if strings.TrimSpace(task) == "" {
 		return domain.Todo{}, ErrTaskRequired
 	}
 
-	return u.repo.Create(ctx, task)
+	if tenantID <= 0 {
+		return domain.Todo{}, ErrTenantRequired
+	}
+
+	return u.repo.Create(ctx, task, tenantID)
 }
 
 // ListTodos returns all todos ordered by id.

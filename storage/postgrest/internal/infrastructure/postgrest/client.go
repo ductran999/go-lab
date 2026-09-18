@@ -1,5 +1,5 @@
 // Package postgrest implements domain.TodoRepository on top of the
-// PostgREST REST API using only the standard library.
+// PostgREST REST API via the shared httpclient package.
 package postgrest
 
 import (
@@ -9,9 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/ductran999/shared-pkg/transport/httpclient/v2"
 )
 
 // ErrPostgrestRequest is returned when PostgREST answers with a non-2xx status.
@@ -20,15 +21,23 @@ var ErrPostgrestRequest = errors.New("postgrest request failed")
 // Client is a minimal PostgREST HTTP client.
 type Client struct {
 	baseURL    string
-	httpClient *http.Client
+	httpClient *httpclient.Client
 }
 
 // NewClient builds a Client targeting the given PostgREST base URL,
-// e.g. http://localhost:3000.
-func NewClient(baseURL string) *Client {
+// e.g. http://localhost:3000. A non-empty token is sent as a bearer
+// Authorization header on every request (empty = anonymous).
+func NewClient(baseURL, token string) *Client {
+	clientOpts := []httpclient.Option{}
+
+	if token != "" {
+		clientOpts = append(clientOpts,
+			httpclient.WithDefaultHeader("Authorization", "Bearer "+token))
+	}
+
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
-		httpClient: http.DefaultClient,
+		httpClient: httpclient.New(clientOpts...),
 	}
 }
 
@@ -52,18 +61,15 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		u += "?" + query.Encode()
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, u, r)
-	if err != nil {
-		return nil, err
+	opts := []httpclient.RequestOption{
+		httpclient.WithContentType("application/json"),
 	}
-
-	req.Header.Set("Content-Type", "application/json")
 
 	if prefer != "" {
-		req.Header.Set("Prefer", prefer)
+		opts = append(opts, httpclient.WithHeader("Prefer", prefer))
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(ctx, method, u, r, opts...)
 	if err != nil {
 		return nil, err
 	}

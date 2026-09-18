@@ -8,18 +8,20 @@ import (
 )
 
 // A Todo is the business entity mirrored by the api.todos table
-// exposed through PostgREST.
+// exposed through PostgREST. TenantID scopes the row to one tenant
+// and is enforced by Row Level Security (see docs/02-auth-model.md).
 type Todo struct {
-	ID   int        `json:"id,omitempty"`
-	Done bool       `json:"done"`
-	Task string     `json:"task"`
-	Due  *time.Time `json:"due,omitempty"`
+	ID       int        `json:"id,omitempty"`
+	Done     bool       `json:"done"`
+	Task     string     `json:"task"`
+	Due      *time.Time `json:"due,omitempty"`
+	TenantID int        `json:"tenant_id"`
 }
 
 // TodoRepository abstracts persistence of Todo entities.
 // Implementations live in the infrastructure layer.
 type TodoRepository interface {
-	Create(ctx context.Context, task string) (Todo, error)
+	Create(ctx context.Context, task string, tenantID int) (Todo, error)
 	List(ctx context.Context) ([]Todo, error)
 	SetDone(ctx context.Context, id int, done bool) (Todo, error)
 	Delete(ctx context.Context, id int) error
