@@ -1,5 +1,6 @@
 // Package domain holds the enterprise entities and repository contracts.
 // It has no dependency on any framework, database, or transport detail.
+// The entity is a raw struct: JSON mapping lives in infrastructure DTOs.
 package domain
 
 import (
@@ -11,11 +12,11 @@ import (
 // exposed through PostgREST. TenantID scopes the row to one tenant
 // and is enforced by Row Level Security (see docs/02-auth-model.md).
 type Todo struct {
-	ID       int        `json:"id,omitempty"`
-	Done     bool       `json:"done"`
-	Task     string     `json:"task"`
-	Due      *time.Time `json:"due,omitempty"`
-	TenantID int        `json:"tenant_id"`
+	ID       int
+	Done     bool
+	Task     string
+	Due      *time.Time
+	TenantID int
 }
 
 // TodoRepository abstracts persistence of Todo entities.

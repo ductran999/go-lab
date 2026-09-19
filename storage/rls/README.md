@@ -59,6 +59,40 @@ Run inside `make psql` (`./queries` is mounted at `/labs/queries`):
 \i /labs/queries/01-basic-isolation.sql
 ```
 
+## Go demo: scoped vs RLS side by side
+
+Two entry points, one per implementation. Each is self-contained:
+read top to bottom to see the whole approach.
+
+- `cmd/scoped`: explicit `Where("tenant_id = ?", ...)` in code.
+- `cmd/rls`: bare `Find` in a tx with `SET LOCAL ROLE` +
+  `SET LOCAL app.tenant_id`; the policy filters rows.
+
+```bash
+make run-scoped   # SELECT * ... WHERE tenant_id = 1 (2 rows)
+make run-rls      # SELECT * (2 rows, no WHERE; RLS filtered)
+make run          # both back-to-back
+```
+
+Same results, different enforcement point. `SET LOCAL`
+keeps role and setting transaction-scoped, so pooled connections never
+leak tenants.
+
+## HTTP server: same comparison over REST
+
+```bash
+make run-server   # :8081
+curl -s localhost:8081/scoped/tenants/1/docs | jq
+TOKEN=$(make -s token TENANT=2)
+curl -s localhost:8081/rls/docs -H "Authorization: Bearer $TOKEN" | jq
+curl -s localhost:8081/rls/docs                        # 401, token required
+```
+
+- `/scoped/tenants/:id/docs`: tenant explicit in path (scoping demo).
+- `/rls/docs`: tenant from JWT via middleware, never in params.
+  Token: `make token TENANT=N` (HS256, `RLS_JWT_SECRET`).
+- Responses are raw JSON arrays (`[]` when empty, never `null`).
+
 ## Cleanup
 
 ```bash

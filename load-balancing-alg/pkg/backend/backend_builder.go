@@ -171,7 +171,7 @@ func (b *backendBuilder) waitForServerReady(port int, errChan <-chan error, id i
 	}
 }
 
-// Helper function to check port availability
+// isPortAvailable reports whether host:port accepts TCP connections.
 func (b *backendBuilder) isPortAvailable(host string, port int) bool {
 	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
@@ -187,7 +187,7 @@ func (b *backendBuilder) isPortAvailable(host string, port int) bool {
 	return true
 }
 
-// random port in 49152–65535
+// getRandomPort returns a random port in 49152–65535.
 func (b *backendBuilder) getRandomPort() int {
 	return rand.IntN(65535-49152+1) + 49152 //nolint:gosec
 }

@@ -13,6 +13,13 @@ run:
 
 linters:
   default: all
+  settings:
+    tagliatelle:
+      # DB columns are snake_case and PostgREST serializes them as-is,
+      # so JSON tags must stay snake_case to match the API contract.
+      case:
+        rules:
+          json: snake
   disable:
     # containedctx is a linter that detects struct contained context.Context field [fast: true, auto-fix: false]
     # using contextcheck which looks more active
@@ -90,11 +97,16 @@ linters:
     # Don't use it's archived
     #    - interfacer
     # Accept Interfaces, Return Concrete Types [fast: false, auto-fix: false]
-    # FUTURE: check if no interface is returned
-    - ireturn
+    # History:
+    #   - disabled initially ("FUTURE: check if no interface is returned").
+    #   - enabled after adopting the return-concrete convention: constructors
+    #     return concrete types, callers bind to narrow interfaces.
+    #    - ireturn
     # Reports long lines [fast: true, auto-fix: false]
-    # FUTURE: would make code more readable
-    - lll
+    # History:
+    #   - disabled initially ("FUTURE: would make code more readable").
+    #   - enabled to enforce short readable lines (max 120 chars).
+    #    - lll
     # Checks key valur pairs for common logger libraries (kitlog,klog,logr,zap).
     # FUTURE: useable as soon as we switch logger library
     - loggercheck
@@ -141,8 +153,10 @@ linters:
     # deprecated, replaced by unused
     #    - structcheck
     # Checks the struct tags. [fast: true, auto-fix: false]
-    # FUTURE: would help for new structs
-    - tagliatelle
+    # History:
+    #   - disabled initially ("FUTURE: would help for new structs").
+    #   - enabled to enforce consistent JSON tag naming.
+    #    - tagliatelle
     # linter checks if examples are testable (have an expected output)
     # FUTURE: as soon as examples are added
     - testableexamples
@@ -196,7 +210,11 @@ linters:
     # FUTURE: can apply this rules when this syntax are family to almost developer. This syntax only apply for go 1.22+
     # - intrange
     - tagalign
-    - godot
+    # Check if comments end in a period [fast: true, auto-fix: true]
+    # History:
+    #   - disabled initially (no entry, default-off scope).
+    #   - enabled to enforce well-formed declaration comments.
+    #    - godot
 
   exclusions:
     rules:

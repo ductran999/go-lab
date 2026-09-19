@@ -43,7 +43,13 @@ func NewClient(baseURL, token string) *Client {
 
 // Do sends one JSON request and returns the raw response body.
 // A Prefer header value is attached when non-empty.
-func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any, prefer string) ([]byte, error) {
+func (c *Client) Do(
+	ctx context.Context,
+	method, path string,
+	query url.Values,
+	body any,
+	prefer string,
+) ([]byte, error) {
 	var r io.Reader
 
 	if body != nil {

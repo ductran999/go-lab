@@ -91,7 +91,7 @@ func (s *SimpleHTTPServer) Latency() time.Duration {
 	return s.latency
 }
 
-// Start the server
+// Start runs the HTTP server until it fails or stops.
 func (s *SimpleHTTPServer) Start() error {
 	s.routes()
 	addr := net.JoinHostPort(s.host, strconv.Itoa(s.port))
@@ -121,7 +121,7 @@ func (s *SimpleHTTPServer) Stop(ctx context.Context) error {
 	return nil
 }
 
-// Handler method
+// reqHandler serves one backend request while simulating load.
 func (s *SimpleHTTPServer) reqHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	reqID := vars["req_id"]
@@ -142,7 +142,7 @@ func (s *SimpleHTTPServer) reqHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Method to initialize routes
+// routes registers the HTTP handlers.
 func (s *SimpleHTTPServer) routes() {
 	s.router.HandleFunc("/req/{req_id}", s.reqHandler)
 }

@@ -109,11 +109,17 @@ func (r *TodoRepository) Delete(ctx context.Context, id int) error {
 }
 
 func decodeTodos(data []byte) ([]domain.Todo, error) {
-	var todos []domain.Todo
+	var dtos []todoDTO
 
-	err := json.Unmarshal(data, &todos)
+	err := json.Unmarshal(data, &dtos)
 	if err != nil {
 		return nil, fmt.Errorf("decode todos: %w", err)
+	}
+
+	todos := make([]domain.Todo, 0, len(dtos))
+
+	for _, dto := range dtos {
+		todos = append(todos, dto.toDomain())
 	}
 
 	return todos, nil
