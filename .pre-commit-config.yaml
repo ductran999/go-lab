@@ -1,0 +1,14 @@
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks secret scan
+        entry: gitleaks protect --staged -v
+        language: system
+        pass_filenames: false
+      - id: gofmt-check
+        name: gofmt check
+        entry: bash -c 'out=$(gofmt -l "$@"); [ -z "$out" ] || { echo "needs formatting:"; echo "$out"; exit 1; }' --
+        language: system
+        types: [go]
+        pass_filenames: true
