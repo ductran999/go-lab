@@ -15,14 +15,12 @@ import (
 
 	"go-lab/storage/postgrest/internal/infrastructure/postgrest"
 	"go-lab/storage/postgrest/internal/usecase"
+
+	"github.com/ductran999/shared-pkg/environ"
 )
 
 func baseURL() string {
-	if v := os.Getenv("POSTGREST_URL"); v != "" {
-		return v
-	}
-
-	return "http://localhost:3000"
+	return environ.Get("POSTGREST_URL", "http://localhost:3000")
 }
 
 // demoTenantID scopes demo rows to tenant 1. POSTGREST_TOKEN optionally
@@ -40,7 +38,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	client := postgrest.NewClient(baseURL(), os.Getenv("POSTGREST_TOKEN"))
+	client := postgrest.NewClient(baseURL(), environ.Get("POSTGREST_TOKEN", ""))
 	repo := postgrest.NewTodoRepository(client)
 	todos := usecase.NewTodoUseCase(repo)
 

@@ -4,7 +4,7 @@ include .env
 export
 endif
 
-.PHONY: default help up down clean psql logs
+.PHONY: default help up down clean psql logs demo run
 
 default: ## show all available tasks
 	@make help
@@ -28,3 +28,8 @@ psql: ## open psql shell (admin, RLS bypassed: SET ROLE lab_user to test)
 
 logs: ## tail postgres logs
 	docker compose logs -f db
+
+demo: ## run GORM + RLS demo (no manual tenant scoping)
+	go run ./cmd/demo
+
+run: demo ## alias of demo (matches postgrest lab convention)
