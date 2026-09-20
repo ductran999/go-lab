@@ -1,0 +1,10 @@
+services:
+  cache:
+    image: nginx:alpine
+    container_name: cors-cache
+    ports:
+      - "8085:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

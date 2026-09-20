@@ -1,1 +1,5 @@
 *.env
+
+# Local build outputs and scratch files (per-lab ./bin and ./tmp).
+bin/
+tmp/

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CORS browser demo (:8091 → :8090)</title>
+    <style>
+      body {
+        font-family: monospace;
+        max-width: 640px;
+        margin: 2rem auto;
+      }
+      button {
+        padding: 0.4rem;
+        margin: 0.2rem;
+      }
+      #log {
+        border: 1px solid #ccc;
+        height: 200px;
+        overflow-y: scroll;
+        padding: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>CORS: browser enforces, server declares</h1>
+    <p>
+      Page origin: <b>:8091</b>. API:
+      <select id="base">
+        <option value="http://localhost:8090">hand-rolled :8090</option>
+        <option value="http://localhost:8092">gin-contrib :8092</option>
+      </select>
+    </p>
+<button id="ok">GET /api/ping (pass CORS)</button>
+      <button id="blocked">GET /plain/ping (blocked: no ACAO)</button>
+      <button id="put">PUT /api/ping (preflight, compare browsers)</button>
+      <button id="login">POST /cred/login (set HttpOnly cookie)</button>
+      <button id="me">GET /cred/me with credentials (prove cookie sent)</button>
+      <button id="post">POST /api/ping plain (simple, no preflight)</button>
+      <button id="trace">GET /api/trace (exposed vs hidden headers)</button>
+      <button id="clear">Clear</button>
+    <div id="log"></div>
+    <script>
+      const log = document.getElementById("log");
+      const add = (t) => {
+        const d = document.createElement("div");
+        d.textContent = t;
+        log.prepend(d);
+      };
+      const base = () => document.getElementById("base").value;
+      const get = async (path, label) => {
+        try {
+          const r = await fetch(base() + path);
+          add(label + " → " + r.status + " " + (await r.text()));
+        } catch (e) {
+          add(label + " → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("ok").onclick = () => get("/api/ping", "api");
+      document.getElementById("blocked").onclick = () =>
+        get("/plain/ping", "plain");
+      document.getElementById("put").onclick = async () => {
+        try {
+          const r = await fetch(base() + "/api/ping", {
+            method: "PUT",
+          });
+          add("PUT api → " + r.status + " " + (await r.text()));
+        } catch (e) {
+          add("PUT api → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("login").onclick = async () => {
+        try {
+          const r = await fetch(base() + "/cred/login", {
+            method: "POST",
+            credentials: "include",
+          });
+          add("login → " + r.status + " (check DevTools Application cookies: HttpOnly, JS can't read it)");
+        } catch (e) {
+          add("login → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("me").onclick = async () => {
+        try {
+          const r = await fetch(base() + "/cred/me", {
+            credentials: "include",
+          });
+          add("me → " + r.status + " " + (await r.text()));
+        } catch (e) {
+          add("me → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("post").onclick = async () => {
+        try {
+          const r = await fetch(base() + "/api/ping", {
+            method: "POST",
+          });
+          add("POST plain → " + r.status + " " + (await r.text()));
+        } catch (e) {
+          add("POST plain → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("trace").onclick = async () => {
+        try {
+          const r = await fetch(base() + "/api/trace");
+          await r.text();
+          add(
+            "trace: X-Request-Id=" +
+              r.headers.get("X-Request-Id") +
+              " X-Internal-Flag=" +
+              r.headers.get("X-Internal-Flag"),
+          );
+        } catch (e) {
+          add("trace → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("clear").onclick = () => (log.innerHTML = "");
+    </script>
+  </body>
+</html>
