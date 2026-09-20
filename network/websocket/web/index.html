@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebSocket origin demo (:8093 → :8094)</title>
+    <style>
+      body {
+        font-family: monospace;
+        max-width: 640px;
+        margin: 2rem auto;
+      }
+      button {
+        padding: 0.4rem;
+        margin: 0.2rem;
+      }
+      #log {
+        border: 1px solid #ccc;
+        height: 200px;
+        overflow-y: scroll;
+        padding: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebSocket: server must check Origin</h1>
+    <p>Page origin: <b>:8093</b> (allowlisted). API: <b>:8094</b>.</p>
+    <button id="connect">Connect</button>
+    <button id="send">Send ping</button>
+    <button id="close">Close</button>
+    <button id="clear">Clear</button>
+    <div id="log"></div>
+    <script>
+      let ws = null;
+      const log = document.getElementById("log");
+      const add = (t) => {
+        const d = document.createElement("div");
+        d.textContent = t;
+        log.prepend(d);
+      };
+      document.getElementById("connect").onclick = () => {
+        ws = new WebSocket("ws://localhost:8094/ws");
+        ws.onopen = () => add("open (101, origin accepted)");
+        ws.onmessage = (e) => add("← " + e.data);
+        ws.onerror = () => add("! error");
+        ws.onclose = (e) => add("closed code=" + e.code);
+      };
+      document.getElementById("send").onclick = () => {
+        if (ws && ws.readyState === 1) ws.send("ping");
+        else add("not connected");
+      };
+      document.getElementById("close").onclick = () => {
+        if (ws) ws.close();
+      };
+      document.getElementById("clear").onclick = () => (log.innerHTML = "");
+    </script>
+  </body>
+</html>
