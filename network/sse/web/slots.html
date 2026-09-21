@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>6-connection proof (:8095 → :8096)</title>
+    <style>
+      body {
+        font-family: monospace;
+        max-width: 640px;
+        margin: 2rem auto;
+      }
+      button {
+        padding: 0.4rem;
+        margin: 0.2rem;
+      }
+      #log {
+        border: 1px solid #ccc;
+        height: 260px;
+        overflow-y: scroll;
+        padding: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>6 slots per origin (HTTP/1.1)</h1>
+    <p>Opens N EventSources to <b>:8096</b>. Watch #7 stall.</p>
+    <button id="open6">Open 6</button>
+    <button id="open7">Open 7</button>
+    <button id="close">Close all</button>
+    <button id="clear">Clear</button>
+    <div id="log"></div>
+    <script>
+      let list = [];
+      const log = document.getElementById("log");
+      const add = (t) => {
+        const d = document.createElement("div");
+        d.textContent = t;
+        log.prepend(d);
+      };
+      const open = (n) => {
+        for (let i = 1; i <= n; i++) {
+          const es = new EventSource("http://localhost:8096/events");
+          const id = list.length + 1;
+          es.onopen = () => add("stream #" + id + ": OPEN");
+          es.addEventListener("tick", (e) => {
+            if (e.lastEventId === "1") add("stream #" + id + ": first event");
+          });
+          es.onerror = () => add("stream #" + id + ": error/retry");
+          list.push(es);
+          add("stream #" + id + ": CONNECTING...");
+        }
+      };
+      document.getElementById("open6").onclick = () => open(6);
+      document.getElementById("open7").onclick = () => open(7);
+      document.getElementById("close").onclick = () => {
+        list.forEach((es) => es.close());
+        list = [];
+        add("all closed (slots freed)");
+      };
+      document.getElementById("clear").onclick = () => (log.innerHTML = "");
+    </script>
+  </body>
+</html>
