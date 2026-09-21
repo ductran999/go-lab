@@ -36,3 +36,18 @@ traceparent: 00-<trace-id>-<parent-id>-<flags>
   envelope — headers only survive HTTP hops.
 - Production: forward to a collector (OTel SDK, Jaeger/Tempo);
   the header contract stays identical, only the sink changes.
+
+## 3. trace vs span vs request_id
+
+- **trace_id**: one end-to-end journey. Minted once at the edge,
+  immutable to the end.
+- **span_id**: one timed unit of work (a hop, a DB call). New
+  span per network hop + per measurable operation; parent links
+  form the waterfall tree under the trace.
+- **request_id**: one HTTP request, minted at ingress/gateway,
+  forwarded as-is. Logs-only correlation, no tree, no timing.
+- Chaining `request_id` across hops is poor-man's tracing:
+  enough for 2–3 linear services, blind at fan-out (parallel
+  branches share one ID) and useless for latency attribution.
+  Rule: linear + find-the-log → request_id; **which hop is
+  slow** or fan-out → trace/span.
