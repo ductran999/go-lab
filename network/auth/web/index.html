@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Auth channels demo (:8097 → :8098)</title>
+    <style>
+      body {
+        font-family: monospace;
+        max-width: 640px;
+        margin: 2rem auto;
+      }
+      button {
+        padding: 0.4rem;
+        margin: 0.2rem;
+      }
+      #log {
+        border: 1px solid #ccc;
+        height: 220px;
+        overflow-y: scroll;
+        padding: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>One token, three channels</h1>
+    <p>Page: <b>:8097</b>. API: <b>:8098</b>. Login first.</p>
+    <button id="login">Login</button>
+    <button id="via-header">/me via header</button>
+    <button id="via-cookie">/me via cookie</button>
+    <button id="via-query">/me via query</button>
+    <button id="strict">/me-strict (header only)</button>
+    <button id="clear">Clear</button>
+    <div id="log"></div>
+    <script>
+      const api = "http://localhost:8098";
+      let token = "";
+      const log = document.getElementById("log");
+      const add = (t) => {
+        const d = document.createElement("div");
+        d.textContent = t;
+        log.prepend(d);
+      };
+      const show = async (label, res) =>
+        add(label + " → " + res.status + " " + (await res.text()));
+      document.getElementById("login").onclick = async () => {
+        const res = await fetch(api + "/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: "demo" }),
+          credentials: "include",
+        });
+        const data = await res.json();
+        token = data.token;
+        add("login → 200 (token kept in JS + HttpOnly cookie set)");
+      };
+      document.getElementById("via-header").onclick = async () =>
+        show(
+          "header",
+          await fetch(api + "/me", {
+            headers: { Authorization: "Bearer " + token },
+          }),
+        );
+      document.getElementById("via-cookie").onclick = async () =>
+        show("cookie", await fetch(api + "/me", { credentials: "include" }));
+      document.getElementById("via-query").onclick = async () =>
+        show("query", await fetch(api + "/me?token=" + token));
+      document.getElementById("strict").onclick = async () =>
+        show("strict+cookie", await fetch(api + "/me-strict"));
+      document.getElementById("clear").onclick = () => (log.innerHTML = "");
+    </script>
+  </body>
+</html>
