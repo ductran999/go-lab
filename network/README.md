@@ -24,6 +24,7 @@ $ cd network
 - [x] `websocket/` lab — handshake Origin check (403 evil/missing, browser 101)
 - [x] `sse/` lab — streaming headers, kill+resume via Last-Event-ID, WS vs SSE doc
 - [x] `auth/` lab — one token three channels (header/cookie/query) + strict endpoint
+- [x] `cache/` lab — ETag/304, max-age freshness, hits counter, http-caching doc
 - [ ] Header deep-dives (cache, auth, SSE/streaming set)
 - [ ] CORS lab (preflight matrix with curl)
 - [ ] Trace propagation demo (2 services + shared trace ID end to end)
