@@ -28,6 +28,7 @@ $ cd network
 - [x] `trace/` lab — W3C traceparent across svc-a → svc-b, shared trace ID
 - [x] `negotiation/` lab — Accept/q ranking, 406, Vary: Accept doc
 - [x] `forwarding/` lab — XFF chain, trust by peer, spoof demo, blocklist verdict
+- [x] `secheaders/` lab — bare vs hardened, polyglot + subresource nosniff demo
 - [ ] Header deep-dives (cache, auth, SSE/streaming set)
 - [ ] CORS lab (preflight matrix with curl)
 - [ ] Trace propagation demo (2 services + shared trace ID end to end)
