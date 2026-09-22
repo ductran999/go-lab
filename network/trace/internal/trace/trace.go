@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const Header = "traceparent"
+const Header = "Traceparent"
 
 // Context is one hop of a distributed trace: the shared trace ID
 // plus this hop's parent (span) ID.

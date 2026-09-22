@@ -44,6 +44,7 @@ func start(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	var downstreamBody map[string]string
+
 	_ = json.NewDecoder(resp.Body).Decode(&downstreamBody)
 
 	slog.Info("svc-a done", "trace_id", ctx.TraceID, "downstream_trace", downstreamBody["trace_id"])
