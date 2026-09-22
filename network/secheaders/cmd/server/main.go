@@ -52,7 +52,8 @@ func libHard(w http.ResponseWriter, _ *http.Request) {
 
 // polyglot looks like HTML but is served as text/plain: a sniffing
 // browser executes the script, a nosniff browser shows inert text.
-const polyglot = `<html><body><h1>if you see a popup, sniffing executed me</h1><script>alert("sniffed XSS")</script></body></html>`
+const polyglot = `<html><body><h1>popup = sniffed</h1>` +
+	`<script>alert("sniffed XSS")</script></body></html>`
 
 func bare(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
