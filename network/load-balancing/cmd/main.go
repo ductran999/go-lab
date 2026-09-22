@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"go-lab/load-balancing-alg/internal/app"
+	"go-lab/network/load-balancing/internal/app"
 	"os"
 
 	"github.com/rs/zerolog"

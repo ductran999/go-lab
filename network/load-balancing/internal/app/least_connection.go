@@ -1,22 +1,20 @@
 package app
 
 import (
+	loadbalancer "go-lab/network/load-balancing/internal/load_blancer"
+	"go-lab/network/load-balancing/internal/tools"
+	"go-lab/network/load-balancing/pkg/backend"
 	"log"
-
-	loadbalancer "go-lab/load-balancing-alg/internal/load_blancer"
-	"go-lab/load-balancing-alg/internal/tools"
-	"go-lab/load-balancing-alg/pkg/backend"
 
 	"github.com/rs/zerolog"
 )
 
-func RunWeightRoundRobinApp(logger zerolog.Logger) {
-	log.Println("[INFO] running weight round-robin app")
+func RunLeastConnectionApp(logger zerolog.Logger) {
+	log.Println("[INFO] running least connection algorithm app")
 
 	// Initialize the backend builder and configure number of backend servers
 	backendBuilder := backend.NewBackendBuilder(logger)
-	backendBuilder.SetNumberOfBackends(3)
-	backendBuilder.EnableRandomWeight() // Enable random weight for backends
+	backendBuilder.SetNumberOfBackends(5)
 
 	// Build the backend servers
 	backends, err := backendBuilder.Build()
@@ -24,8 +22,8 @@ func RunWeightRoundRobinApp(logger zerolog.Logger) {
 		logger.Fatal().Msgf("failed when build backends: %v", err)
 	}
 
-	// Create a new load balancer on localhost:8080 using the backends and  weight round-robin algorithm
-	lb, err := loadbalancer.NewLoadBalancer("localhost", 8080, backends, loadbalancer.WeightedRoundRobin)
+	// Create a new load balancer on localhost:8080 using the backends and using least connection algorithm
+	lb, err := loadbalancer.NewLoadBalancer("localhost", 8080, backends, loadbalancer.LeastConnection)
 	if err != nil {
 		logger.Fatal().Msgf("failed to init loadbalancer: %v", err)
 	}

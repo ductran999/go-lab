@@ -1,8 +1,8 @@
 package algorithms
 
 import (
-	"go-lab/load-balancing-alg/internal/errs"
-	"go-lab/load-balancing-alg/pkg/backend"
+	"go-lab/network/load-balancing/internal/errs"
+	"go-lab/network/load-balancing/pkg/backend"
 	"log"
 	"net/http"
 	"net/http/httputil"

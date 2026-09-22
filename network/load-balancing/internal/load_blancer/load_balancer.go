@@ -3,7 +3,7 @@ package loadbalancer
 import (
 	"errors"
 	"fmt"
-	"go-lab/load-balancing-alg/pkg/backend"
+	"go-lab/network/load-balancing/pkg/backend"
 	"net"
 	"net/http"
 	"strconv"

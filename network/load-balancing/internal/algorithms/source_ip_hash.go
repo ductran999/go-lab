@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"sync"
 
-	"go-lab/load-balancing-alg/internal/errs"
-	"go-lab/load-balancing-alg/pkg/backend"
+	"go-lab/network/load-balancing/internal/errs"
+	"go-lab/network/load-balancing/pkg/backend"
 )
 
 type sourceIPHash struct {

@@ -3,9 +3,9 @@ package app
 import (
 	"log"
 
-	loadbalancer "go-lab/load-balancing-alg/internal/load_blancer"
-	"go-lab/load-balancing-alg/internal/tools"
-	"go-lab/load-balancing-alg/pkg/backend"
+	loadbalancer "go-lab/network/load-balancing/internal/load_blancer"
+	"go-lab/network/load-balancing/internal/tools"
+	"go-lab/network/load-balancing/pkg/backend"
 
 	"github.com/rs/zerolog"
 )

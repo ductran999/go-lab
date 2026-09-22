@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-	"go-lab/load-balancing-alg/pkg/requester"
+	"go-lab/network/load-balancing/pkg/requester"
 	"io"
 	"net/http"
 	"time"

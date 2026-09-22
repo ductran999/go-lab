@@ -3,9 +3,9 @@ package loadbalancer
 import (
 	"net/http"
 
-	"go-lab/load-balancing-alg/internal/algorithms"
-	"go-lab/load-balancing-alg/internal/errs"
-	"go-lab/load-balancing-alg/pkg/backend"
+	"go-lab/network/load-balancing/internal/algorithms"
+	"go-lab/network/load-balancing/internal/errs"
+	"go-lab/network/load-balancing/pkg/backend"
 )
 
 type AlgorithmImplementer interface {
