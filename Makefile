@@ -1,4 +1,4 @@
-.PHONY: default tidy vet lint lint-fix build test cover run-postgrest help
+.PHONY: default tidy vet lint lint-fix build test cover check run-postgrest help
 
 default: ## show all available tasks
 	@make help
@@ -23,6 +23,12 @@ test: ## run all tests
 
 cover: ## coverage summary for all packages
 	go test -cover ./...
+
+check: ## full local gate: tidy, vet, build, test (lint via golangci action)
+	go mod tidy && git diff --exit-code go.mod go.sum
+	go vet ./...
+	go build ./...
+	go test ./...
 
 run-postgrest: ## run PostgREST CRUD demo (needs stack up, see storage/postgrest)
 	$(MAKE) -C storage/postgrest run

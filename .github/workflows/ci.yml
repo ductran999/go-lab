@@ -8,6 +8,19 @@ on:
     branches: ["master"]
 
 jobs:
+  verify:
+    name: make-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Run make check (tidy, vet, build, test)
+        run: make check
+
   lint-check:
     name: golangci-lint-v2
     runs-on: ubuntu-latest
