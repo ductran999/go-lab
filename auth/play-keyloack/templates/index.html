@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OIDC Client - Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .box {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 5px;
+      }
+      button {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Welcome Header: Will be updated dynamically using ID Token -->
+    <h2 id="welcome-header">Welcome!</h2>
+
+    <!-- UI State: Unauthenticated -->
+    <div id="login-section" class="box">
+      <p>
+        You are not logged in. Click below to sign in via our Keycloak Server.
+      </p>
+      <button onclick="loginWithKeyCloak()">Login with Keycloak</button>
+    </div>
+
+    <!-- UI State: Authenticated -->
+    <div id="dashboard-section" class="box hidden">
+      <h3 id="welcome-message" style="color: blue">Welcome!</h3>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+      const BACKEND_URL = "{{ .BackendUrl }}";
+
+      // 1. Helper to decode JWT (ID Token) payload locally without contacting Server
+      function parseJwt(token) {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        return JSON.parse(window.atob(base64));
+      }
+
+      async function loginWithKeyCloak() {
+        const width = 500;
+        const height = 600;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
+
+        // OIDC Standard: Scope MUST include "openid profile email"
+        const authorizeURL = `${BACKEND_URL}/login`;
+
+        window.open(
+          authorizeURL,
+          "OIDCPopup",
+          `width=${width},height=${height},top=${top},left=${left}`,
+        );
+      }
+
+      window.addEventListener("message", (event) => {
+        // Kiểm tra nếu dữ liệu gửi về là Object và có chứa id_token
+        if (event.data && event.data.id_token) {
+          // Lưu đúng chuỗi ID Token (JWT) vào LocalStorage
+          localStorage.setItem("my_id_token", event.data.id_token);
+
+          // Cập nhật lại giao diện ngay lập tức
+          checkLoginStatus();
+        }
+      });
+
+      // 5. Check login status
+      function checkLoginStatus() {
+        const idToken = localStorage.getItem("my_id_token");
+
+        // BẮT BUỘC PHẢI CÓ IF (idToken) Ở ĐÂY
+        if (idToken) {
+          try {
+            const payload = parseJwt(idToken);
+
+            // Kiểm tra hết hạn token
+            const isExpired = payload.exp && payload.exp * 1000 < Date.now();
+            if (isExpired) {
+              console.warn("ID Token has expired. Logging out...");
+              logout();
+              return;
+            }
+
+            // Lấy tên hiển thị linh hoạt
+            const displayName =
+              payload.name ||
+              payload.preferred_username ||
+              payload.email ||
+              "User";
+            const displayEmail =
+              payload.email || payload.preferred_username || "N/A";
+
+            // Hiển thị Dashboard
+            document.getElementById("login-section").classList.add("hidden");
+            document
+              .getElementById("dashboard-section")
+              .classList.remove("hidden");
+
+            document.getElementById("welcome-header").innerText =
+              `Welcome, ${displayName}!`;
+            document.getElementById("welcome-message").innerText =
+              `Successfully authenticated as ${displayEmail} using decrypted ID Token.`;
+          } catch (e) {
+            console.error("Failed to parse ID Token:", e);
+            logout();
+          }
+        } else {
+          document.getElementById("login-section").classList.remove("hidden");
+          document.getElementById("dashboard-section").classList.add("hidden");
+          document.getElementById("welcome-header").innerText = "Welcome!";
+        }
+      }
+      function logout() {
+        localStorage.removeItem("my_access_token");
+        localStorage.removeItem("my_id_token");
+        sessionStorage.removeItem("pkce_verifier");
+        checkLoginStatus();
+      }
+
+      checkLoginStatus();
+    </script>
+  </body>
+</html>

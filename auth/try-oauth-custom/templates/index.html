@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OAuth2 PKCE - Client App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .box {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 5px;
+      }
+      button {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 id="welcome-header">Welcome!</h2>
+
+    <!-- UI State: Unauthenticated -->
+    <div id="login-section" class="box">
+      <p>
+        You are not logged in. Click below to sign in via our custom OAuth2
+        Server.
+      </p>
+      <button onclick="loginWithPKCE()">Login with OAuth2 (PKCE)</button>
+    </div>
+
+    <!-- UI State: Authenticated -->
+    <div id="dashboard-section" class="box hidden">
+      <h3 id="welcome-message" style="color: blue">Loading profile...</h3>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+      const BACKEND_URL = "{{ .BackendURL }}";
+      const CLIENT_ID = "my_spa_client";
+      const REDIRECT_URI = `${BACKEND_URL}/oauth/callback`;
+
+      // 1. Helper to generate a random PKCE Verifier (Key)
+      function generateVerifier() {
+        const array = new Uint32Array(32);
+        window.crypto.getRandomValues(array);
+        return Array.from(array, (dec) =>
+          ("0" + dec.toString(16)).substr(-2),
+        ).join("");
+      }
+
+      // 2. Helper to hash the Verifier using SHA-256 (Create the Lock)
+      async function generateChallenge(verifier) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(verifier);
+        const hash = await window.crypto.subtle.digest("SHA-256", data);
+        return btoa(String.fromCharCode(...new Uint8Array(hash)))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=+$/, ""); // Base64URL encoding without padding
+      }
+
+      // 3. Trigger the login popup with PKCE challenge
+      async function loginWithPKCE() {
+        const verifier = generateVerifier();
+        console.log("Generated PKCE Verifier (Key):", verifier);
+        const challenge = await generateChallenge(verifier);
+        console.log("Generated PKCE Challenge (Lock):", challenge);
+
+        // Save the plain verifier in sessionStorage to exchange for token later
+        sessionStorage.setItem("pkce_verifier", verifier);
+
+        const width = 500,
+          height = 600;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
+
+        // URL contains the Client ID and the PKCE Challenge (The Lock)
+        const authorizeURL = `${BACKEND_URL}/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&code_challenge=${challenge}&state=custom_random_state`;
+
+        window.open(
+          authorizeURL,
+          "OAuth2Popup",
+          `width=${width},height=${height},top=${top},left=${left}`,
+        );
+      }
+
+      // 4. Listen for the authorization "code" sent from the popup
+      window.addEventListener("message", async (event) => {
+        if (event.origin !== BACKEND_URL) return;
+
+        const { code } = event.data;
+        if (code) {
+          await exchangeCodeForToken(code);
+        }
+      });
+
+      // 5. POST to /oauth/token sending the "code" and the raw "verifier" (The Key)
+      async function exchangeCodeForToken(code) {
+        const verifier = sessionStorage.getItem("pkce_verifier");
+
+        const formData = new URLSearchParams();
+        formData.append("code", code);
+        formData.append("client_id", CLIENT_ID);
+        formData.append("code_verifier", verifier); // Plain key
+
+        try {
+          const response = await fetch(`${BACKEND_URL}/oauth/token`, {
+            method: "POST",
+            body: formData,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          });
+
+          if (!response.ok) throw new Error("Token exchange failed");
+
+          const data = await response.json();
+          localStorage.setItem("my_jwt_token", data.access_token);
+          checkLoginStatus();
+        } catch (error) {
+          alert("Error exchanging code: " + error.message);
+        }
+      }
+
+      async function checkLoginStatus() {
+        const token = localStorage.getItem("my_jwt_token");
+        if (token) {
+          const profile = await fetchUserProfile(token);
+          if (profile && profile.name) {
+            document.getElementById("login-section").classList.add("hidden");
+            document
+              .getElementById("dashboard-section")
+              .classList.remove("hidden");
+            document.getElementById("welcome-header").innerText =
+              `Welcome, ${profile.name}!`;
+            document.getElementById("welcome-message").innerText =
+              `Logged in as ${profile.email}`;
+          } else {
+            logout();
+          }
+        } else {
+          document.getElementById("login-section").classList.remove("hidden");
+          document.getElementById("dashboard-section").classList.add("hidden");
+          document.getElementById("welcome-header").innerText = "Welcome!";
+        }
+      }
+
+      async function fetchUserProfile(token) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/profile`, {
+            headers: { Authorization: "Bearer " + token },
+          });
+          if (!response.ok) return null;
+          return await response.json();
+        } catch {
+          return null;
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("my_jwt_token");
+        sessionStorage.removeItem("pkce_verifier");
+        checkLoginStatus();
+      }
+
+      checkLoginStatus();
+    </script>
+  </body>
+</html>

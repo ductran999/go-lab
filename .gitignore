@@ -1,5 +1,8 @@
 *.env
 
+# Private keys are never committed (demo certs regenerate locally).
+*.key
+
 # Local build outputs and scratch files (per-lab ./bin and ./tmp).
 bin/
 tmp/

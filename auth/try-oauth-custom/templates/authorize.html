@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OAuth2 Authorization Consent</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 50px;
+      }
+      .card {
+        border: 1px solid #ccc;
+        padding: 30px;
+        display: inline-block;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Approve Access?</h2>
+      <p>
+        Application <strong>{{ .ClientID }}</strong> wants to access your
+        profile data.
+      </p>
+
+      <!-- Clicking this approves and redirects to Go back with code -->
+      <button
+        onclick="window.location.href='/oauth/authorize/approve?client_id={{ .ClientID }}&redirect_uri={{ .RedirectURI }}&code_challenge={{ .CodeChallenge }}&state={{ .State }}'"
+      >
+        Approve & Continue
+      </button>
+    </div>
+  </body>
+</html>

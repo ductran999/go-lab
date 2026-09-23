@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Authentication Success</title>
+  </head>
+  <body>
+    <p>Signing in, please wait...</p>
+    <script>
+      const token = "{{ .Token }}";
+
+      window.opener.postMessage(token, "{{ .BackendURL }}");
+      window.close();
+    </script>
+  </body>
+</html>

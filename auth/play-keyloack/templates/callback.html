@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <p>Signing in, please wait...</p>
+
+    <script>
+      const payload = {
+        message: "{{ .Message }}",
+        id_token: "{{ .IDToken }}",
+      };
+
+      if (window.opener) {
+        window.opener.postMessage(payload, "{{ .BackendURL }}");
+        window.close();
+      }
+    </script>
+  </body>
+</html>

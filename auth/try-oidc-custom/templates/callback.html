@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <p>Signing in, please wait...</p>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
+      window.opener.postMessage({ code: code }, "http://localhost:8080");
+      window.close();
+    </script>
+  </body>
+</html>

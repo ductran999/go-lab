@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OAuth2 + JWT Test (Popup Flow)</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .box {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 5px;
+      }
+      button {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Dynamic Welcome Header -->
+    <h2 id="welcome-header">Go Goth Example!</h2>
+
+    <!-- UI State: Unauthenticated -->
+    <div id="login-section" class="box">
+      <p>Please log in to continue.</p>
+      <button onclick="openLoginPopup()">Login with Google</button>
+    </div>
+
+    <!-- UI State: Authenticated (Now dynamically shows User Profile) -->
+    <div id="dashboard-section" class="box hidden">
+      <h3 style="color: blue" id="welcome-message">Loading profile...</h3>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+      const BACKEND_URL = "{{ .BackendURL }}"; // Dynamically injected from Go backend
+
+      // 1. Open the secure login popup window
+      function openLoginPopup() {
+        const width = 500;
+        const height = 600;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
+
+        window.open(
+          `${BACKEND_URL}/auth/google`,
+          "GoogleLoginPopup",
+          `width=${width},height=${height},top=${top},left=${left}`,
+        );
+      }
+
+      // 2. Listen for the JWT token sent from the popup
+      window.addEventListener("message", (event) => {
+        if (event.origin !== BACKEND_URL) {
+          return;
+        }
+
+        const token = event.data;
+        if (token) {
+          // Store token in LocalStorage
+          localStorage.setItem("my_jwt_token", token);
+          // Run check login to automatically fetch profile
+          checkLoginStatus();
+        }
+      });
+
+      // 3. Orchestrate login state and trigger automatic profile fetching
+      async function checkLoginStatus() {
+        const token = localStorage.getItem("my_jwt_token");
+
+        if (token) {
+          // Fetch user profile automatically using the token
+          const userProfile = await fetchUserProfile(token);
+
+          if (userProfile && userProfile.name) {
+            // Update UI with the user's actual name
+            document.getElementById("login-section").classList.add("hidden");
+            document
+              .getElementById("dashboard-section")
+              .classList.remove("hidden");
+            document.getElementById("welcome-header").innerText =
+              `Welcome, ${userProfile.name}!`;
+            document.getElementById("welcome-message").innerText =
+              `You are successfully logged in as ${userProfile.email}.`;
+          } else {
+            // Force logout if token is expired or invalid
+            logout();
+          }
+        } else {
+          // Reset UI to unauthenticated state
+          document.getElementById("login-section").classList.remove("hidden");
+          document.getElementById("dashboard-section").classList.add("hidden");
+          document.getElementById("welcome-header").innerText =
+            "Go Goth Example!";
+        }
+      }
+
+      // 4. Helper API function to call Backend and retrieve Profile info
+      async function fetchUserProfile(token) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/profile`, {
+            method: "GET",
+            headers: {
+              Authorization: "Bearer " + token, // Attach JWT in the header
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Invalid Token");
+          }
+
+          return await response.json(); // Returns { name, email } from backend
+        } catch (error) {
+          console.error("Failed to fetch profile:", error);
+          return null;
+        }
+      }
+
+      // 5. Logout function
+      function logout() {
+        localStorage.removeItem("my_jwt_token");
+        checkLoginStatus();
+      }
+
+      // Automatically run status check on page load
+      checkLoginStatus();
+    </script>
+  </body>
+</html>
