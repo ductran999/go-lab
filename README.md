@@ -12,6 +12,7 @@ tech that serves the research belongs here (SQL, Docker, frontend, ...).
 | `network/` | HTTP(S): CORS, WebSocket, SSE, auth, cache, trace, negotiation, forwarding, secheaders, range, load-balancing |
 | `practices/` | Methodology: contract-first, TDD, clean architecture, git workflow |
 | `storage/postgrest/` | PostgREST: REST from Postgres, JWT, multi-tenant RLS |
+| `storage/cache/` | Cache backends: Redis, Memcached, Dragonfly, KeyDB, in-mem |
 | `storage/rls/` | Postgres Row Level Security: policies, benchmarks, Go integration |
 | `storage/realtime/` | Postgres NOTIFY → SSE bridge |
 

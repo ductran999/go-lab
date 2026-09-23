@@ -1,0 +1,44 @@
+services:
+  redis:
+    image: redis:8.2-m01-alpine
+    container_name: cachekit_redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=redis
+    command: >
+      redis-server
+      --requirepass redis
+    networks:
+      - localnet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  memcached:
+    image: memcached:latest
+    ports:
+      - "11211:11211"
+    command: memcached -m 256
+
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    ports:
+      - "6389:6379"
+    command: ["--maxmemory=1gb"]
+  
+  keydb:
+    image: eqalpha/keydb:latest
+    container_name: keydb
+    ports:
+      - "6399:6379"
+    command: ["keydb-server", "--server-threads", "4"]
+    restart: unless-stopped
+
+networks:
+  localnet:
+    driver: bridge
