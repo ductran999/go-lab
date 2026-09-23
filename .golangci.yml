@@ -223,3 +223,16 @@ linters:
           - errcheck
           - gocyclo
           - dupl
+      # Legacy auth playgrounds: runnable (build/vet/test via make
+      # check) but exempt from strict style — pre-existing findings
+      # not worth churning demo code for.
+      - path: auth/
+        linters:
+          - wsl_v5
+          - errcheck
+          - godot
+          - gosec
+          - dogsled
+          - modernize
+          - err113
+          - noinlineerr

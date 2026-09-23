@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -184,7 +185,7 @@ func main() {
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method")
+				return nil, errors.New("unexpected signing method")
 			}
 			return jwtSecretKey, nil
 		})
