@@ -8,7 +8,7 @@ tech that serves the research belongs here (SQL, Docker, frontend, ...).
 
 | Folder | Research |
 | ------ | -------- |
-| `auth/` | Identity: m2m, mTLS, OAuth2/OIDC, Goth, Keycloak |
+| `security/` | Identity + hashing: auth flows, mTLS, password/crypto hashes |
 | `network/` | HTTP(S): CORS, WebSocket, SSE, auth, cache, trace, negotiation, forwarding, secheaders, range, load-balancing |
 | `practices/` | Methodology: contract-first, TDD, clean architecture, git workflow |
 | `storage/postgrest/` | PostgREST: REST from Postgres, JWT, multi-tenant RLS |

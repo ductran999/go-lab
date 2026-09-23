@@ -2,7 +2,7 @@
 
 How services and users prove who they are. Same Go module as the
 repo root: `make tidy` covers these deps too. Complements
-`../network/auth/` (token channels) — this folder is flows and
+`../../network/auth/` (token channels) — this folder is flows and
 handshakes, that one is headers.
 
 ## Map

@@ -20,6 +20,4 @@ go run ./network/load-balancing/cmd -app-name rr  # from repo root
 
 ## Docs
 
-- TODO: algorithm trade-offs doc (when each wins, failure modes).
-  Ties to `../forwarding/` — this is the brain gateways embed
-  next to the XFF trust logic.
+- `docs/01-algorithms.md` — when each wins, failure modes, rules
