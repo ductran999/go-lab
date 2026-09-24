@@ -4,7 +4,8 @@ Postgres `LISTEN/NOTIFY` bridged to browser SSE: DB row in, live event
 out. Joins the `sse` lab (fan-out) with the `storage` labs (Postgres
 as source of truth).
 
-Deep-dive notes in [`docs/`](docs/): pipeline, CDC compare, limitations.
+Deep-dive notes in [`docs/`](docs/): pipeline, CDC compare, limitations,
+auth + resume.
 
 ```bash
 # Change DIR
@@ -25,12 +26,17 @@ make run-server        # API + SSE on :8082, frontend at /
 ## Try it
 
 ```bash
-# terminal 1: stream tenant 1 (blocks, prints data: lines)
-curl -N 'http://localhost:8082/stream?tenant_id=1'
-# terminal 2: write (trigger NOTIFYs, terminal 1 prints it)
+TOKEN=$(curl -s -X POST 'http://localhost:8082/token' \
+  -H 'Content-Type: application/json' -d '{"tenant_id":1}' | jq -r .token)
+# terminal 1: authenticated stream (blocks, prints id: + data: lines)
+curl -N "http://localhost:8082/stream?token=$TOKEN"
+# terminal 2: write as tenant 1 (tenant from token, not body)
 curl -s -X POST 'http://localhost:8082/events' \
   -H 'Content-Type: application/json' \
-  -d '{"tenant_id":1,"kind":"ping","payload":{"msg":"hello"}}' | jq
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"kind":"ping","payload":{"msg":"hello"}}' | jq
+# resume: kill terminal 1, write more, reconnect with Last-Event-ID
+curl -N "http://localhost:8082/stream?token=$TOKEN" -H 'Last-Event-ID: 3'
 # or open http://localhost:8082/ and click through
 ```
 
@@ -55,5 +61,5 @@ make clean   # stop + remove postgres_realtime_data volume
 ## Next
 
 - [x] DB + trigger, Go listener, SSE + writer, frontend
-- [ ] Stream replay (recent N rows, then live tail + `Last-Event-ID`)
-- [ ] JWT tenant filter on `/stream` (same pattern as the rls lab)
+- [x] Stream replay (missed rows, then live tail + `Last-Event-ID`)
+- [x] JWT tenant filter on `/stream` (same pattern as the rls lab)

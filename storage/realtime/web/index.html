@@ -47,6 +47,7 @@
 
     <script>
       let src = null;
+      let token = "";
       const log = document.getElementById("log");
       const add = (text) => {
         const div = document.createElement("div");
@@ -56,9 +57,11 @@
       document.getElementById("connect").onclick = () => {
         if (src) src.close();
         const t = document.getElementById("tenant").value;
-        src = new EventSource("/stream?tenant_id=" + t);
-        src.onmessage = (e) => add("← " + e.data);
-        src.onerror = () => add("! stream error/closed");
+        // EventSource sets no headers: token rides ?token=, resume via
+        // Last-Event-ID is automatic on reconnect.
+        src = new EventSource("/stream?token=" + encodeURIComponent(token));
+        src.onmessage = (e) => add("← id=" + e.lastEventId + " " + e.data);
+        src.onerror = () => add("! stream error/closed → retry with Last-Event-ID");
         add("connected as tenant " + t);
       };
       document.getElementById("disconnect").onclick = () => {
@@ -68,18 +71,30 @@
       };
       document.getElementById("form").onsubmit = async (e) => {
         e.preventDefault();
-        const t = document.getElementById("tenant").value;
         const res = await fetch("/events", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
           body: JSON.stringify({
-            tenant_id: Number(t),
             kind: document.getElementById("kind").value,
             payload: { msg: document.getElementById("msg").value },
           }),
         });
         add("→ POST " + res.status);
       };
+      // Mint a demo token whenever the tenant changes.
+      document.getElementById("tenant").onchange = async (e) => {
+        const res = await fetch("/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant_id: Number(e.target.value) }),
+        });
+        token = (await res.json()).token;
+        add("token minted for tenant " + e.target.value);
+      };
+      document.getElementById("tenant").dispatchEvent(new Event("change"));
     </script>
   </body>
 </html>

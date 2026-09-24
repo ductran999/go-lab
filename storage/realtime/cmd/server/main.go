@@ -80,7 +80,14 @@ func main() {
 		}
 	}()
 
-	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+
+	r := gin.New()
+	r.Use(gin.Recovery())
+
+	// SSE streams only end on client disconnect: their "latency" is
+	// connection lifetime, not slowness. Skip them from access logs.
+	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: []string{"/stream"}}))
 
 	// Demo frontend. Served from ./web, so run from storage/realtime
 	// (e.g. via make run-server) for the path to resolve.
