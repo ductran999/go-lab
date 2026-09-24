@@ -67,7 +67,7 @@ func main() {
 
 	r.GET("/login", func(c *gin.Context) {
 		state := generateRandomState()
-		c.SetCookie("oauth_state", state, 300, "/", "localhost", false, true)
+		c.SetCookie("oauth_state", state, 300, "/", "localhost", true, true)
 
 		url := oauth2Config.AuthCodeURL(state)
 		c.Redirect(http.StatusFound, url)

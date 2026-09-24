@@ -10,6 +10,8 @@ import (
 
 // Login sets an HttpOnly session cookie. JS can never read it;
 // the browser attaches it automatically on later credentialed requests.
+// Secure holds on localhost too (trustworthy origin); plain-HTTP LAN
+// testing needs it off — keep this demo localhost-only instead.
 func Login(c *gin.Context) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "session",
@@ -17,7 +19,7 @@ func Login(c *gin.Context) {
 		Path:     "/",
 		MaxAge:   3600,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
 	c.JSON(http.StatusOK, gin.H{"message": "logged in"})
