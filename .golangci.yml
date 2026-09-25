@@ -242,3 +242,15 @@ linters:
         linters:
           - wsl_v5
           - noinlineerr
+      - path: messaging/
+        linters:
+          - noinlineerr
+          - ireturn
+          - errcheck
+          - wsl_v5
+          - godoclint
+          - gocritic
+          - err113
+          - godot
+          - unconvert
+          - gosec

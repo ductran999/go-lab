@@ -3,18 +3,14 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"strings"
-
-	"golang.org/x/net/http2"
 
 	"github.com/ductran999/shared-pkg/environ"
 	"github.com/ductran999/shared-pkg/pretty/display"
@@ -54,16 +50,15 @@ func main() {
 		}
 	} else {
 		base = "http://localhost:" + port
-		client = &http.Client{
-			Transport: &http2.Transport{
-				AllowHTTP: true,
-				DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-					var d net.Dialer
 
-					return d.DialContext(ctx, network, addr)
-				},
-			},
-		}
+		// Unencrypted HTTP/2, stdlib way (Go 1.24+): prior knowledge,
+		// no upgrade dance, no x/net needed.
+		tr := &http.Transport{}
+		tr.Protocols = &http.Protocols{}
+		tr.Protocols.SetHTTP1(true)
+		tr.Protocols.SetUnencryptedHTTP2(true)
+
+		client = &http.Client{Transport: tr}
 	}
 
 	created, err := client.Post(base+"/todos", "application/json", strings.NewReader(`{"task":"write lab"}`))

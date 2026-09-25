@@ -95,21 +95,7 @@ func Chat(ctx context.Context, client pb.TodosClient) {
 // Dual opens Watch + Chat on ONE connection: two stream IDs
 // interleaved on one TCP. Capture lo in Wireshark to see the frames.
 func Dual(ctx context.Context, client pb.TodosClient) {
-	go func() {
-		watch, err := client.Watch(ctx, &pb.WatchRequest{AfterId: 0})
-		if err != nil {
-			return
-		}
-
-		for {
-			ev, err := watch.Recv()
-			if err != nil {
-				return
-			}
-
-			fmt.Printf("[watch] event id=%d\n", ev.GetId())
-		}
-	}()
+	go watchPrint(ctx, client)
 
 	chat, err := client.Chat(ctx)
 	if err != nil {
@@ -124,21 +110,41 @@ func Dual(ctx context.Context, client pb.TodosClient) {
 		case <-ctx.Done():
 			return
 		case <-tick.C:
-			msg := &pb.ChatMsg{From: "client", Text: fmt.Sprintf("ping %d", i)}
-			sendErr := chat.Send(msg)
-			if sendErr != nil {
-				fail(sendErr)
-			}
-			fmt.Println("[send]", msg.GetText())
-
-			echo, err := chat.Recv()
-			if err != nil {
-				fail(err)
-			}
-
-			fmt.Println("[recv]:", echo.GetText())
+			sendChat(chat, i)
 		}
 	}
+}
+
+func watchPrint(ctx context.Context, client pb.TodosClient) {
+	watch, err := client.Watch(ctx, &pb.WatchRequest{AfterId: 0})
+	if err != nil {
+		return
+	}
+
+	for {
+		ev, err := watch.Recv()
+		if err != nil {
+			return
+		}
+
+		fmt.Printf("[watch] event id=%d\n", ev.GetId())
+	}
+}
+
+func sendChat(chat pb.Todos_ChatClient, i int) {
+	msg := &pb.ChatMsg{From: "client", Text: fmt.Sprintf("ping %d", i)}
+
+	sendErr := chat.Send(msg)
+	if sendErr != nil {
+		fail(sendErr)
+	}
+
+	echo, err := chat.Recv()
+	if err != nil {
+		fail(err)
+	}
+
+	fmt.Printf("[chat] echo: %s\n", echo.GetText())
 }
 
 // Slow asks for 2s of sleep with a 500ms deadline: the server

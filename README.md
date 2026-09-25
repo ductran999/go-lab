@@ -9,6 +9,7 @@ tech that serves the research belongs here (SQL, Docker, frontend, ...).
 | Folder | Research |
 | ------ | -------- |
 | `security/` | Identity + hashing: auth flows, mTLS, password/crypto hashes |
+| `messaging/` | Async: Kafka clients compared, RabbitMQ |
 | `network/` | HTTP(S): CORS, WebSocket, SSE, auth, cache, trace, negotiation, forwarding, secheaders, range, load-balancing |
 | `practices/` | Methodology: contract-first, TDD, clean architecture, git workflow |
 | `storage/postgrest/` | PostgREST: REST from Postgres, JWT, multi-tenant RLS |
