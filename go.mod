@@ -21,6 +21,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/markbates/goth v1.82.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/quic-go/quic-go v0.61.0
 	github.com/redis/go-redis/v9 v9.8.0
 	github.com/rs/zerolog v1.34.0
 	github.com/spaolacci/murmur3 v1.1.0
@@ -77,7 +78,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.60.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

@@ -31,6 +31,8 @@ $ cd network
 - [x] `secheaders/` lab — bare vs hardened, polyglot + subresource nosniff demo
 - [x] `range/` lab — 206/416 resume, parallel fetch client, checksum + hashproof
 - [x] `load-balancing/` lab — six algorithms harness (moved from root)
+- [x] `grpc/` lab — unary, watch, chat, TLS switch, H2 + protobuf docs
+- [x] `http3/` lab — QUIC server/client, H3 doc (needs grpc demo certs)
 - [ ] Header deep-dives (cache, auth, SSE/streaming set)
 - [ ] CORS lab (preflight matrix with curl)
 - [ ] Trace propagation demo (2 services + shared trace ID end to end)

@@ -99,3 +99,16 @@ Every frame: 9-byte header (`length | type | flags | stream id`) + payload.
   ships it). Six-socket pool still applies.
 - Everything above framing — methods, status, CORS, cookies, auth,
   `traceparent` — is byte-identical on H1 and H2.
+
+## 7. Transport vs dialect (xe vs tiếng)
+
+- **H1/H2/H3 are transports** (the vehicle): framing, multiplexing,
+  encryption negotiation. **REST/RPC are dialects** (the language):
+  resources + verbs vs remote function calls.
+- Any pairing works: REST on H1/H2/H3, gRPC on H2/H3. Same H2
+  connection carries both — but endpoints must share the dialect:
+  a gRPC server answers only gRPC clients (protobuf +
+  `application/grpc`), a REST server answers plain HTTP clients.
+- H2 upgrades transparently (same dialect, faster vehicle); gRPC
+  needs matching stubs (same `.proto` both sides) or a transcoder
+  (grpc-gateway) to serve REST from one definition.
