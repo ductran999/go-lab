@@ -33,6 +33,7 @@ $ cd network
 - [x] `load-balancing/` lab — six algorithms harness (moved from root)
 - [x] `grpc/` lab — unary, watch, chat, TLS switch, H2 + protobuf docs
 - [x] `http3/` lab — QUIC server/client, H3 doc (needs grpc demo certs)
+- [x] `http2/` lab — same REST JSON over h2c (transport vs dialect proof)
 - [ ] Header deep-dives (cache, auth, SSE/streaming set)
 - [ ] CORS lab (preflight matrix with curl)
 - [ ] Trace propagation demo (2 services + shared trace ID end to end)

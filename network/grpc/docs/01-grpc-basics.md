@@ -37,5 +37,10 @@
 - Service-to-service inside one org (typed, fast, codegen).
 - Browser clients: grpc-web proxy needed (browsers don't speak
   raw gRPC) — public APIs usually stay REST/JSON.
+- REST+H2 covers ~80%: public APIs, webhooks, CRUD — readable,
+  debuggable, browser-native. gRPC pays off for internal meshes
+  (compile-time contracts), big payloads (3–10x smaller), complex
+  bidi streams, propagated deadlines. Rule: **outside → REST,
+  inside → gRPC** (see `../http2/` for the REST-on-H2 proof).
 - Ties to `practices/01-contract-first-vs-code-first.md`:
   gRPC is contract-first where the compiler enforces the contract.
