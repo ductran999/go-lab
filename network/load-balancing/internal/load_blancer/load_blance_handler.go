@@ -43,7 +43,7 @@ func (lb *loadBalanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	lb.algorithmImpl.ForwardRequest(w, r)
 }
 
-//nolint:ireturn // factory returns one of several implementations
+//nolint:ireturn // factory picks one of several implementations by runtime value.
 func (h *loadBalanceHandler) getAlgorithmImpl(alg Algorithm) (AlgorithmImplementer, error) {
 	switch alg {
 	case RoundRobin:

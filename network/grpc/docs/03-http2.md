@@ -22,17 +22,17 @@
 
 Every frame: 9-byte header (`length | type | flags | stream id`) + payload.
 
-| Type | Job |
-|------|-----|
-| `HEADERS` | Opens a stream, carries HPACK'd headers (+ priority) |
-| `DATA` | Body bytes |
-| `SETTINGS` | Connection knobs (both directions) |
-| `WINDOW_UPDATE` | Flow-control credits (per stream + per connection) |
-| `PRIORITY` | Stream weight/dependency (rarely honored today) |
-| `RST_STREAM` | Abort one stream (cheap cancel — H1 can't do this) |
-| `GOAWAY` | Graceful connection shutdown (finish streams, send no new) |
-| `PING` | RTT probe + keepalive |
-| `CONTINUATION` | Header block overflow (many headers) |
+| Type            | Job                                                        |
+| --------------- | ---------------------------------------------------------- |
+| `HEADERS`       | Opens a stream, carries HPACK'd headers (+ priority)       |
+| `DATA`          | Body bytes                                                 |
+| `SETTINGS`      | Connection knobs (both directions)                         |
+| `WINDOW_UPDATE` | Flow-control credits (per stream + per connection)         |
+| `PRIORITY`      | Stream weight/dependency (rarely honored today)            |
+| `RST_STREAM`    | Abort one stream (cheap cancel — H1 can't do this)         |
+| `GOAWAY`        | Graceful connection shutdown (finish streams, send no new) |
+| `PING`          | RTT probe + keepalive                                      |
+| `CONTINUATION`  | Header block overflow (many headers)                       |
 
 - **Stream IDs**: odd = client-initiated, even = server-initiated
   (push), `0` = connection-level. IDs never reused on a connection.
@@ -49,7 +49,7 @@ Every frame: 9-byte header (`length | type | flags | stream id`) + payload.
   receiver grants more via `WINDOW_UPDATE`. A greedy download can't
   starve sibling streams; backpressure is protocol-native (compare
   our labs' hand-rolled drop-on-full Hub buffers).
-- **Cost**: one lost TCP packet stalls *every* stream (TCP reorders
+- **Cost**: one lost TCP packet stalls _every_ stream (TCP reorders
   below H2's view). HTTP-over-QUIC (H3) fixes this with per-stream
   UDP flows — the remaining head-of-line moves down a layer again.
 
@@ -90,6 +90,7 @@ Every frame: 9-byte header (`length | type | flags | stream id`) + payload.
   graceful shutdown. Keep-alive is H1 heritage, retired here.
 
 ## 7. Where our labs sit
+
 - gRPC: H2-native (needs streams). Reflection, health checks ride
   the same connection as RPCs.
 - SSE: works on both — plain response trick, H2 just multiplexes it
