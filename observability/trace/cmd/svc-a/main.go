@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"go-lab/network/trace/internal/trace"
+	"go-lab/observability/trace/internal/trace"
 
 	"github.com/ductran999/shared-pkg/environ"
 )

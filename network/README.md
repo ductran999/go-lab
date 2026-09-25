@@ -34,9 +34,8 @@ $ cd network
 - [x] `grpc/` lab — unary, watch, chat, TLS switch, H2 + protobuf docs
 - [x] `http3/` lab — QUIC server/client, H3 doc (needs grpc demo certs)
 - [x] `http2/` lab — same REST JSON over h2c (transport vs dialect proof)
-- [ ] Header deep-dives (cache, auth, SSE/streaming set)
-- [ ] CORS lab (preflight matrix with curl)
-- [ ] Trace propagation demo (2 services + shared trace ID end to end)
-- [ ] `Last-Event-ID` resume + heartbeat tuning (feeds realtime lab)
+- [x] ~~Header deep-dives~~, ~~CORS preflight matrix~~, ~~trace demo~~, ~~Last-Event-ID resume~~ — all done above, retired
+
+> `trace/` moved to `../observability/trace/` (pillar seed).
 
 Deep-dive notes in [`docs/`](docs/). Each doc: keywords, TL;DR, tables.
