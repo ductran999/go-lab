@@ -6,6 +6,32 @@
 
 ## 1. Wire
 
+```text
+┌─────────────────────────────┐
+│  RPC  (Todos.Create, Chat)  │  ← dialect: calls, unary/stream
+├─────────────────────────────┤
+│  HTTP/2 (streams, frames)   │  ← vehicle: multiplex, HPACK
+├─────────────────────────────┤
+│  TLS  (optional, h2c w/o)   │  ← seal (ALPN picks h2)
+├─────────────────────────────┤
+│  TCP  (1 connection)        │  ← road: ordered bytes
+└─────────────────────────────┘
+```
+Each layer minds its own job: swap RPC for REST without touching
+H2, swap H2 for H3 without touching RPC.
+
+## 1b. Layer map
+
+- **Application layer (OSI L7)**: REST, gRPC, GraphQL — *what*
+  is said (resources vs calls).
+- **HTTP/1.1 / HTTP/2 / HTTP/3**: transport protocols — *how*
+  bytes are framed, multiplexed, ordered.
+- **TLS**: encryption & identity — same for all above.
+- **TCP / UDP**: raw byte pipe.
+
+HTTP (1/2/3) carries REST or gRPC; TCP carries HTTP/2, UDP carries
+HTTP/3. Swap a layer, layers above/below don't notice.
+
 - **IDL**: `.proto` declares messages + service. `buf generate`
   emits Go structs, client, server interface — drift is a
   compile error, not a runtime surprise.

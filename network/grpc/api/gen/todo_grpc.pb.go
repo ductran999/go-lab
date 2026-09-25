@@ -23,6 +23,7 @@ const (
 	Todos_Get_FullMethodName    = "/todo.v1.Todos/Get"
 	Todos_Watch_FullMethodName  = "/todo.v1.Todos/Watch"
 	Todos_Chat_FullMethodName   = "/todo.v1.Todos/Chat"
+	Todos_Sleep_FullMethodName  = "/todo.v1.Todos/Sleep"
 )
 
 // TodosClient is the client API for Todos service.
@@ -36,6 +37,7 @@ type TodosClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*Todo, error)
 	Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TodoEvent], error)
 	Chat(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ChatMsg, ChatMsg], error)
+	Sleep(ctx context.Context, in *SleepRequest, opts ...grpc.CallOption) (*SleepReply, error)
 }
 
 type todosClient struct {
@@ -98,6 +100,16 @@ func (c *todosClient) Chat(ctx context.Context, opts ...grpc.CallOption) (grpc.B
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Todos_ChatClient = grpc.BidiStreamingClient[ChatMsg, ChatMsg]
 
+func (c *todosClient) Sleep(ctx context.Context, in *SleepRequest, opts ...grpc.CallOption) (*SleepReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SleepReply)
+	err := c.cc.Invoke(ctx, Todos_Sleep_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TodosServer is the server API for Todos service.
 // All implementations must embed UnimplementedTodosServer
 // for forward compatibility.
@@ -109,6 +121,7 @@ type TodosServer interface {
 	Get(context.Context, *GetRequest) (*Todo, error)
 	Watch(*WatchRequest, grpc.ServerStreamingServer[TodoEvent]) error
 	Chat(grpc.BidiStreamingServer[ChatMsg, ChatMsg]) error
+	Sleep(context.Context, *SleepRequest) (*SleepReply, error)
 	mustEmbedUnimplementedTodosServer()
 }
 
@@ -130,6 +143,9 @@ func (UnimplementedTodosServer) Watch(*WatchRequest, grpc.ServerStreamingServer[
 }
 func (UnimplementedTodosServer) Chat(grpc.BidiStreamingServer[ChatMsg, ChatMsg]) error {
 	return status.Errorf(codes.Unimplemented, "method Chat not implemented")
+}
+func (UnimplementedTodosServer) Sleep(context.Context, *SleepRequest) (*SleepReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sleep not implemented")
 }
 func (UnimplementedTodosServer) mustEmbedUnimplementedTodosServer() {}
 func (UnimplementedTodosServer) testEmbeddedByValue()               {}
@@ -206,6 +222,24 @@ func _Todos_Chat_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Todos_ChatServer = grpc.BidiStreamingServer[ChatMsg, ChatMsg]
 
+func _Todos_Sleep_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SleepRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TodosServer).Sleep(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Todos_Sleep_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TodosServer).Sleep(ctx, req.(*SleepRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Todos_ServiceDesc is the grpc.ServiceDesc for Todos service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -220,6 +254,10 @@ var Todos_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _Todos_Get_Handler,
+		},
+		{
+			MethodName: "Sleep",
+			Handler:    _Todos_Sleep_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

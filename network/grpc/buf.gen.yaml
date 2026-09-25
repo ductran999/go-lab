@@ -1,8 +1,8 @@
 version: v1
 plugins:
   - plugin: go
-    out: internal/pb
+    out: api/gen
     opt: paths=source_relative
   - plugin: go-grpc
-    out: internal/pb
+    out: api/gen
     opt: paths=source_relative

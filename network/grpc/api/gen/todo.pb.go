@@ -325,6 +325,94 @@ func (x *ChatMsg) GetText() string {
 	return ""
 }
 
+type SleepRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ms            int64                  `protobuf:"varint,1,opt,name=ms,proto3" json:"ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SleepRequest) Reset() {
+	*x = SleepRequest{}
+	mi := &file_todo_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SleepRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SleepRequest) ProtoMessage() {}
+
+func (x *SleepRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_todo_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SleepRequest.ProtoReflect.Descriptor instead.
+func (*SleepRequest) Descriptor() ([]byte, []int) {
+	return file_todo_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SleepRequest) GetMs() int64 {
+	if x != nil {
+		return x.Ms
+	}
+	return 0
+}
+
+type SleepReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Woke          bool                   `protobuf:"varint,1,opt,name=woke,proto3" json:"woke,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SleepReply) Reset() {
+	*x = SleepReply{}
+	mi := &file_todo_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SleepReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SleepReply) ProtoMessage() {}
+
+func (x *SleepReply) ProtoReflect() protoreflect.Message {
+	mi := &file_todo_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SleepReply.ProtoReflect.Descriptor instead.
+func (*SleepReply) Descriptor() ([]byte, []int) {
+	return file_todo_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SleepReply) GetWoke() bool {
+	if x != nil {
+		return x.Woke
+	}
+	return false
+}
+
 var File_todo_proto protoreflect.FileDescriptor
 
 const file_todo_proto_rawDesc = "" +
@@ -348,12 +436,18 @@ const file_todo_proto_rawDesc = "" +
 	"\x04todo\x18\x03 \x01(\v2\r.todo.v1.TodoR\x04todo\"1\n" +
 	"\aChatMsg\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text2\xc9\x01\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"\x1e\n" +
+	"\fSleepRequest\x12\x0e\n" +
+	"\x02ms\x18\x01 \x01(\x03R\x02ms\" \n" +
+	"\n" +
+	"SleepReply\x12\x12\n" +
+	"\x04woke\x18\x01 \x01(\bR\x04woke2\xfe\x01\n" +
 	"\x05Todos\x12/\n" +
 	"\x06Create\x12\x16.todo.v1.CreateRequest\x1a\r.todo.v1.Todo\x12)\n" +
 	"\x03Get\x12\x13.todo.v1.GetRequest\x1a\r.todo.v1.Todo\x124\n" +
 	"\x05Watch\x12\x15.todo.v1.WatchRequest\x1a\x12.todo.v1.TodoEvent0\x01\x12.\n" +
-	"\x04Chat\x12\x10.todo.v1.ChatMsg\x1a\x10.todo.v1.ChatMsg(\x010\x01B(Z&go-lab/network/grpc/internal/pb;todopbb\x06proto3"
+	"\x04Chat\x12\x10.todo.v1.ChatMsg\x1a\x10.todo.v1.ChatMsg(\x010\x01\x123\n" +
+	"\x05Sleep\x12\x15.todo.v1.SleepRequest\x1a\x13.todo.v1.SleepReplyB$Z\"go-lab/network/grpc/api/gen;todopbb\x06proto3"
 
 var (
 	file_todo_proto_rawDescOnce sync.Once
@@ -367,7 +461,7 @@ func file_todo_proto_rawDescGZIP() []byte {
 	return file_todo_proto_rawDescData
 }
 
-var file_todo_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_todo_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_todo_proto_goTypes = []any{
 	(*Todo)(nil),          // 0: todo.v1.Todo
 	(*CreateRequest)(nil), // 1: todo.v1.CreateRequest
@@ -375,6 +469,8 @@ var file_todo_proto_goTypes = []any{
 	(*WatchRequest)(nil),  // 3: todo.v1.WatchRequest
 	(*TodoEvent)(nil),     // 4: todo.v1.TodoEvent
 	(*ChatMsg)(nil),       // 5: todo.v1.ChatMsg
+	(*SleepRequest)(nil),  // 6: todo.v1.SleepRequest
+	(*SleepReply)(nil),    // 7: todo.v1.SleepReply
 }
 var file_todo_proto_depIdxs = []int32{
 	0, // 0: todo.v1.TodoEvent.todo:type_name -> todo.v1.Todo
@@ -382,12 +478,14 @@ var file_todo_proto_depIdxs = []int32{
 	2, // 2: todo.v1.Todos.Get:input_type -> todo.v1.GetRequest
 	3, // 3: todo.v1.Todos.Watch:input_type -> todo.v1.WatchRequest
 	5, // 4: todo.v1.Todos.Chat:input_type -> todo.v1.ChatMsg
-	0, // 5: todo.v1.Todos.Create:output_type -> todo.v1.Todo
-	0, // 6: todo.v1.Todos.Get:output_type -> todo.v1.Todo
-	4, // 7: todo.v1.Todos.Watch:output_type -> todo.v1.TodoEvent
-	5, // 8: todo.v1.Todos.Chat:output_type -> todo.v1.ChatMsg
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
+	6, // 5: todo.v1.Todos.Sleep:input_type -> todo.v1.SleepRequest
+	0, // 6: todo.v1.Todos.Create:output_type -> todo.v1.Todo
+	0, // 7: todo.v1.Todos.Get:output_type -> todo.v1.Todo
+	4, // 8: todo.v1.Todos.Watch:output_type -> todo.v1.TodoEvent
+	5, // 9: todo.v1.Todos.Chat:output_type -> todo.v1.ChatMsg
+	7, // 10: todo.v1.Todos.Sleep:output_type -> todo.v1.SleepReply
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -404,7 +502,7 @@ func file_todo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_todo_proto_rawDesc), len(file_todo_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

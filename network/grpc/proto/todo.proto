@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package todo.v1;
 
-option go_package = "go-lab/network/grpc/internal/pb;todopb";
+option go_package = "go-lab/network/grpc/api/gen;todopb";
 
 // Todos: unary CRUD plus a server-streaming watch. The stream is
 // the gRPC answer to SSE: typed, resumable by id, multiplexed.
@@ -11,6 +11,7 @@ service Todos {
   rpc Get(GetRequest) returns (Todo);
   rpc Watch(WatchRequest) returns (stream TodoEvent);
   rpc Chat(stream ChatMsg) returns (stream ChatMsg);
+  rpc Sleep(SleepRequest) returns (SleepReply);
 }
 
 message Todo {
@@ -40,4 +41,12 @@ message TodoEvent {
 message ChatMsg {
   string from = 1;
   string text = 2;
+}
+
+message SleepRequest {
+  int64 ms = 1;
+}
+
+message SleepReply {
+  bool woke = 1;
 }

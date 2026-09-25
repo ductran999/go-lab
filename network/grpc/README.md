@@ -4,6 +4,11 @@ Todos service on `:8107` (HTTP/2 + protobuf). Unary Create/Get,
 server-streaming Watch with `after_id` replay. Reflection on for
 `grpcurl` (no protos needed to explore).
 
+```bash
+# Change DIR
+$ cd network/grpc
+```
+
 ## Run
 
 ```bash
@@ -12,6 +17,8 @@ make run-client CMD=create  # terminal 2
 make run-client CMD=watch   # terminal 3 — streams until Ctrl-C
 make run-client CMD=chat    # bidi echo
 make run-client CMD=dual    # watch + chat on ONE connection (Wireshark lo!)
+make run-client CMD=slow    # 2s sleep, 500ms deadline → DeadlineExceeded
+make run-client CMD=health  # SERVING (no token needed)
 ```
 
 ## Try
@@ -42,3 +49,4 @@ never commit `*.key`.
 - `docs/01-grpc-basics.md` — HTTP/2, protobuf, 4 call types, vs REST/SSE
 - `docs/02-protobuf-types.md` — scalar map, enums, well-known types
 - `docs/03-http2.md` — H1 vs H2 plumbing, multiplexing, notes
+- `docs/04-advanced.md` — interceptors, deadlines, health
