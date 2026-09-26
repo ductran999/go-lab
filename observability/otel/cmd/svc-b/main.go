@@ -10,10 +10,12 @@ import (
 	"os"
 	"time"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 
 	"go-lab/observability/otel/internal/middleware"
+	"go-lab/observability/otel/internal/requestid"
+	"go-lab/observability/otel/internal/server"
 	"go-lab/observability/otel/internal/tracing"
 
 	"github.com/ductran999/shared-pkg/environ"
@@ -25,18 +27,13 @@ func fail(err error) {
 	os.Exit(1)
 }
 
-var tracer = otel.Tracer("svc-b")
-
 func work(w http.ResponseWriter, r *http.Request) {
-	// Extract: continues the trace the caller started (same trace ID).
-	ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
-
-	ctx, span := tracer.Start(ctx, "work")
-	defer span.End()
+	// Span already started by otelhttp (child of svc-a's): read it.
+	span := trace.SpanFromContext(r.Context())
 
 	// Pretend something measurable happens here.
 	select {
-	case <-ctx.Done():
+	case <-r.Context().Done():
 	case <-time.After(50 * time.Millisecond):
 	}
 
@@ -50,7 +47,10 @@ func work(w http.ResponseWriter, r *http.Request) {
 func main() {
 	ctx := context.Background()
 
-	shutdown, err := tracing.Setup(ctx, "svc-b", environ.Get("OTEL_ENDPOINT", "localhost:4317"))
+	shutdown, err := tracing.Setup(ctx,
+		tracing.NewServiceInfo("svc-b", "1.0.0", "pipeline"),
+		environ.Get("OTEL_ENDPOINT", "localhost:4317"),
+	)
 	if err != nil {
 		fail(err)
 	}
@@ -62,18 +62,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/work", work)
 
-	addr := ":" + environ.Get("PORT", "8111")
-
-	slog.Info("serving otel svc-b", "addr", addr)
-
-	server := &http.Server{
-		Addr:              addr,
-		Handler:           middleware.Logging(mux),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
-	err = server.ListenAndServe()
-	if err != nil {
-		fail(err)
-	}
+	server.Run(
+		":"+environ.Get("PORT", "8111"),
+		requestid.Ensure(otelhttp.NewHandler(middleware.Auth(middleware.Logging(mux)), "svc-b")),
+	)
 }

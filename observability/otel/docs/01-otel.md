@@ -9,10 +9,10 @@
 - **SDK** (`internal/tracing`): tracer provider + OTLP exporter +
   W3C propagator, wired once per binary. Spans are cheap structs
   until exported; the batcher ships in the background.
-- **Propagation**: `Inject` writes `traceparent` on the way out,
-  `Extract` reads it on the way in. Same header as the trace lab —
-  OTel just standardizes who writes it (otelhttp does this
-  automatically; here manual to show the gears).
+- **Propagation**: `otelhttp` handler extracts + starts, transport
+  injects downstream. Same W3C `traceparent` as the trace lab —
+  the lib owns the mechanics, we own identity (JWT) and business
+  attributes.
 - **Collector**: vendor-neutral receiver (OTLP `:4317`) → batch →
   exporters (Jaeger, debug, Prometheus...). Backends change in YAML,
   code untouched.

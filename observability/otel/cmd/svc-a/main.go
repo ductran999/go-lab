@@ -8,12 +8,13 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 
 	"go-lab/observability/otel/internal/middleware"
+	"go-lab/observability/otel/internal/requestid"
+	"go-lab/observability/otel/internal/server"
 	"go-lab/observability/otel/internal/tracing"
 
 	"github.com/ductran999/shared-pkg/environ"
@@ -25,24 +26,59 @@ func fail(err error) {
 	os.Exit(1)
 }
 
-var tracer = otel.Tracer("svc-a")
+// token mints a demo JWT (tenant_id + user_id, 1h). Demo issuance:
+// no login, no rotation — the transport lesson matters, not the PKI.
+func token(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		TenantID string `json:"tenant_id"`
+		UserID   string `json:"user_id"`
+	}
 
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	if body.TenantID == "" {
+		body.TenantID = "demo-tenant"
+	}
+
+	if body.UserID == "" {
+		body.UserID = "demo-user"
+	}
+
+	signed, err := middleware.Mint(body.TenantID, body.UserID)
+	if err != nil {
+		http.Error(w, "mint failed", http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"token": signed})
+}
+
+// start serves the traced endpoint. Span already started by otelhttp:
+// read it, never start one here.
 func start(w http.ResponseWriter, r *http.Request) {
-	// Root span: no incoming context on the edge (extract harmlessly anyway).
-	ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
-
-	ctx, span := tracer.Start(ctx, "start")
-	defer span.End()
+	ctx := r.Context()
+	span := trace.SpanFromContext(ctx)
 
 	downstream := "http://" + environ.Get("SVC_B", "localhost:8111") + "/work"
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, downstream, nil)
 
-	// Inject: the traceparent header svc-b extracts. This is the manual
-	// version of what otelhttp does automatically.
-	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+	// Forward identity downstream untouched: Bearer (svc-b verifies)
+	// and the request id (svc-b logs the same join key).
+	if auth := r.Header.Get("Authorization"); auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
 
-	resp, err := http.DefaultClient.Do(req)
+	if id := requestid.Of(ctx); id != "" {
+		req.Header.Set("X-Request-Id", id)
+	}
+
+	// otelhttp transport injects traceparent automatically.
+	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		slog.Error("downstream failed", "error", err)
 		http.Error(w, "downstream unreachable", http.StatusBadGateway)
@@ -60,16 +96,23 @@ func start(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"service":    "a",
+		"success": true,
+		"data": map[string]any{
+			"service":    "a",
+			"downstream": downstreamBody,
+		},
 		"trace_id":   span.SpanContext().TraceID().String(),
-		"downstream": downstreamBody,
+		"request_id": requestid.Of(ctx),
 	})
 }
 
 func main() {
 	ctx := context.Background()
 
-	shutdown, err := tracing.Setup(ctx, "svc-a", environ.Get("OTEL_ENDPOINT", "localhost:4317"))
+	shutdown, err := tracing.Setup(ctx,
+		tracing.NewServiceInfo("svc-a", "1.0.0", "pipeline"),
+		environ.Get("OTEL_ENDPOINT", "localhost:4317"),
+	)
 	if err != nil {
 		fail(err)
 	}
@@ -81,18 +124,13 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/start", start)
 
-	addr := ":" + environ.Get("PORT", "8110")
+	// /token stays outside Auth: you can't require a token to mint one.
+	// Chain: otelhttp (span) → Auth (identity) → Logging (the one
+	// log line) → mux.
+	public := http.NewServeMux()
+	public.Handle("/start", middleware.Auth(middleware.Logging(mux)))
+	public.HandleFunc("/token", token)
 
-	slog.Info("serving otel svc-a", "addr", addr)
-
-	server := &http.Server{
-		Addr:              addr,
-		Handler:           middleware.Logging(mux),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
-	err = server.ListenAndServe()
-	if err != nil {
-		fail(err)
-	}
+	server.Run(":"+environ.Get("PORT", "8110"),
+		requestid.Ensure(otelhttp.NewHandler(public, "svc-a")))
 }
