@@ -1,4 +1,4 @@
-# mux deep-dive — stdlib HTTP, no magic
+# mux deep-dive — stdlib `net/http.ServeMux`, no magic (not gorilla/mux)
 
 One day on `net/http`: routing, middleware, lifecycle, context,
 static, testing. Each lesson runs standalone.
