@@ -10,7 +10,7 @@
   no rotation — lab issuance, not a pattern).
 - Writers use `Authorization: Bearer`. EventSource cannot set
   headers → `?token=` (short-lived, logged — accepted trade-off,
-  see `network/auth/`).
+  see `network/http/auth/`).
 - Tenant travels **only** in the token. `?tenant_id=` is gone:
   spoofing another tenant's stream now requires their key.
 

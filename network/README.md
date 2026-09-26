@@ -17,24 +17,14 @@ $ cd network
 - CORS mechanics: preflight, credentials, common misconfigs.
 - Observability: logs/metrics/traces joined by trace ID.
 
-## Roadmap
+## Roadmap (grouped by layer)
 
-- [x] `docs/01-request-journey.md` — full path with per-hop headers
-- [x] `cors/` lab — hand-rolled middleware + preflight matrix (4 cases verified)
-- [x] `websocket/` lab — handshake Origin check (403 evil/missing, browser 101)
-- [x] `sse/` lab — streaming headers, kill+resume via Last-Event-ID, WS vs SSE doc
-- [x] `auth/` lab — one token three channels (header/cookie/query) + strict endpoint
-- [x] `cache/` lab — ETag/304, max-age freshness, hits counter, http-caching doc
-- [x] `trace/` lab — W3C traceparent across svc-a → svc-b, shared trace ID
-- [x] `negotiation/` lab — Accept/q ranking, 406, Vary: Accept doc
-- [x] `forwarding/` lab — XFF chain, trust by peer, spoof demo, blocklist verdict
-- [x] `secheaders/` lab — bare vs hardened, polyglot + subresource nosniff demo
-- [x] `range/` lab — 206/416 resume, parallel fetch client, checksum + hashproof
-- [x] `load-balancing/` lab — six algorithms harness (moved from root)
-- [x] `grpc/` lab — unary, watch, chat, TLS switch, H2 + protobuf docs
-- [x] `http3/` lab — QUIC server/client, H3 doc (needs grpc demo certs)
-- [x] `http2/` lab — same REST JSON over h2c (transport vs dialect proof)
-- [x] ~~Header deep-dives~~, ~~CORS preflight matrix~~, ~~trace demo~~, ~~Last-Event-ID resume~~ — all done above, retired
+- [x] `docs/` — request journey, API contracts
+- [x] `http/` — cors, auth, cache, negotiation, forwarding, secheaders, range
+- [x] `realtime/` — websocket (Origin/PNA), sse (headers/resume/usecases)
+- [x] `rpc/` — grpc (unary/streams/interceptors), http2 (REST on H2), http3 (QUIC)
+- [x] `infra/` — load-balancing harness + algorithms doc
+- [x] ~~old flat items~~ — retired into groups above
 
 > `trace/` moved to `../observability/trace/` (pillar seed).
 

@@ -1,0 +1,36 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.142.0
+    command: ["--config=/etc/otelcol.yaml"]
+    volumes:
+      - ./otelcol.yaml:/etc/otelcol.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC (SDK export target)
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # collector self-metrics
+
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
+    ports:
+      - "16686:16686" # UI
+      - "4317"        # not exposed: SDKs talk to the collector, not jaeger
+    depends_on:
+      - collector
+
+  # Alternative: skip the collector, SDKs export straight to Jaeger.
+  # OTEL_ENDPOINT=localhost:4317 still works (same port, direct).
+  jaeger-direct:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
+    profiles: ["direct"]
+    ports:
+      - "16687:16686" # UI on :16687 to avoid clashing with :16686
+      - "4317:4317"   # OTLP gRPC straight in
+      - "4318:4318"   # OTLP HTTP straight in
+      - "5778:5778"   # legacy sampling endpoint
+      - "9411:9411"   # Zipkin compat
+    # NOTE: all-in-one = transient in-memory storage (traces vanish on
+    # restart — fine for demos). Prod roles (separate collector/query,
+    # persistent backends) need an explicit config file:
+    # volumes:
+    #   - ./jaeger.yaml:/jaeger/config.yaml:ro
+    # command: ["--config", "/jaeger/config.yaml"]

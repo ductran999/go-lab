@@ -35,7 +35,7 @@ its own tool instead of forcing one spec to cover everything.
 ## 4. Rule of thumb
 
 - REST public → OpenAPI + codegen.
-- One-way push → SSE, hand-written client (`../sse/`).
-- Chatty both-ways → WebSocket (`../websocket/`).
+- One-way push → SSE, hand-written client (`../realtime/sse/`).
+- Chatty both-ways → WebSocket (`../realtime/websocket/`).
 - Typed streams inside GraphQL → Subscriptions.
 - Internal-only → separate spec or separate stack.

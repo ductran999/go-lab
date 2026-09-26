@@ -10,5 +10,5 @@ sealed (`hashing/`).
 | `auth/`    | Identity flows: m2m, mTLS, OAuth2/OIDC, Goth, Keycloak                                             |
 | `hashing/` | Hash benchmarks: passwords (argon2/bcrypt/scrypt), crypto (sha/blake3), non-crypto (xxhash/murmur) |
 
-Ties: `../network/auth/` (token channels), `../network/secheaders/`
+Ties: `../network/http/auth/` (token channels), `../network/http/secheaders/`
 (response armor), `../practices/` (contract-first for APIs).

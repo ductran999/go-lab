@@ -9,7 +9,8 @@ tech that serves the research belongs here (SQL, Docker, frontend, ...).
 | Folder               | Research                                                                                                      |
 | -------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `security/`          | Identity + hashing: auth flows, mTLS, password/crypto hashes                                                  |
-| `messaging/`         | Async: Kafka clients compared, RabbitMQ                                                                       |
+| `messaging/` | Async: Kafka clients compared, RabbitMQ |
+| `framework/` | Same API in mux/gin/echo/fiber, side by side |
 | `observability/`     | Traces, metrics, logs (W3C trace lab; room for Prometheus/Loki)                                               |
 | `network/`           | HTTP(S): CORS, WebSocket, SSE, auth, cache, trace, negotiation, forwarding, secheaders, range, load-balancing |
 | `practices/`         | Methodology: contract-first, TDD, clean architecture, git workflow                                            |
