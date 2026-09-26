@@ -29,8 +29,21 @@ services:
       - "5778:5778"   # legacy sampling endpoint
       - "9411:9411"   # Zipkin compat
     # NOTE: all-in-one = transient in-memory storage (traces vanish on
-    # restart — fine for demos). Prod roles (separate collector/query,
-    # persistent backends) need an explicit config file:
-    # volumes:
-    #   - ./jaeger.yaml:/jaeger/config.yaml:ro
-    # command: ["--config", "/jaeger/config.yaml"]
+    # restart — fine for demos). See jaeger-badger below for persistent.
+
+  # Persistent variant: Badger embedded KV on disk (survives restarts,
+  # single node only — no extra container). Badger = LSM KV like RocksDB.
+  jaeger-badger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
+    profiles: ["badger"]
+    ports:
+      - "16688:16686" # UI on :16688
+      - "4319:4317"   # OTLP gRPC (own host port: direct SDK target)
+      - "4320:4318"   # OTLP HTTP
+    volumes:
+      - ./jaeger-badger.yaml:/jaeger/config.yaml:ro
+      - badger-data:/badger
+    command: ["--config", "/jaeger/config.yaml"]
+
+volumes:
+  badger-data:

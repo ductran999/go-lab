@@ -14,7 +14,8 @@ $ cd observability/otel
 ## Run
 
 ```bash
-make up     # collector (:4317) + jaeger UI (:16686)
+make up     # collector (:4317) + jaeger UI (:16686, in-memory)
+# or: make up-with-badger  # persistent jaeger (UI :16688, OTLP :4319)
 make run-b  # terminal 1
 make run-a  # terminal 2
 ```
@@ -22,11 +23,12 @@ make run-a  # terminal 2
 ## Architecture: how traces reach Jaeger
 
 ```text
-curl --(JWT)--> svc-a:8110 --(JWT+fwd)--> svc-b:8111
+curl --(JWT)--> svc-a:8110 --(JWT+baggage)--> svc-b:8111
   | trace.id minted            | same trace.id (child span)
+  | baggage{tenant,user} set   | baggage read, no re-auth
   | OTLP :4317                 | OTLP :4317
   v                            v
-           collector:4317 (batch)
+           collector:4317 (redact → batch)
                  |
           Jaeger :16686 (UI waterfall)
                  ^
@@ -44,7 +46,7 @@ curl --(JWT)--> svc-a:8110 --(JWT+fwd)--> svc-b:8111
 # Mint once, reuse (1h expiry)
 TOKEN=$(curl -s -X POST localhost:8110/token \
   -H 'Content-Type: application/json' \
-  -d '{"tenant_id":"acme","user_id":"u1"}' | jq -r .token)
+  -d '{"tenant_id":"acme","user_id":"boss@company.com"}' | jq -r .token)
 
 # Traced call (both services log auth + spans carry tenant/user)
 curl -s localhost:8110/start -H "Authorization: Bearer $TOKEN" | jq

@@ -1,0 +1,43 @@
+# Jaeger v2 all-in-one with Badger persistent storage (from upstream
+# cmd/jaeger/config-badger.yaml, trimmed to one store). Traces survive
+# restarts under ./badger-data (gitignored via data/ rule... keep local).
+service:
+  extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+
+extensions:
+  healthcheckv2:
+    use_v2: true
+    http:
+
+  jaeger_query:
+    storage:
+      traces: badger_store
+
+  jaeger_storage:
+    backends:
+      badger_store:
+        badger:
+          directories:
+            keys: "/badger/keys"
+            values: "/badger/values"
+          ephemeral: false
+          ttl:
+            spans: 48h
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: badger_store

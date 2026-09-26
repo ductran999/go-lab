@@ -8,6 +8,12 @@ receivers:
 
 processors:
   batch: {}
+  # Demo: mask anything looking like an email in span attributes.
+  # Prod: allowlist keys instead (allow_all_keys: false + allowed_keys).
+  redaction/pii:
+    allow_all_keys: true
+    blocked_values:
+      - ".*@.*\\..*"
 
 exporters:
   otlp/jaeger:
@@ -21,5 +27,5 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [redaction/pii, batch]
       exporters: [otlp/jaeger, debug]

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
 
 	"go-lab/observability/otel/internal/middleware"
@@ -29,7 +30,14 @@ func fail(err error) {
 
 func work(w http.ResponseWriter, r *http.Request) {
 	// Span already started by otelhttp (child of svc-a's): read it.
+	// Baggage rode along with traceparent: tenant/user without re-auth.
 	span := trace.SpanFromContext(r.Context())
+	bag := baggage.FromContext(r.Context())
+
+	slog.Info("work",
+		"trace.id", span.SpanContext().TraceID().String(),
+		"tenant.id", bag.Member("tenant.id").Value(),
+		"user.id", bag.Member("user.id").Value())
 
 	// Pretend something measurable happens here.
 	select {

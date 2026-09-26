@@ -21,5 +21,8 @@ run-b: ## run downstream service on :8111 (needs collector up)
 up: ## start otel collector + jaeger (UI :16686)
 	docker compose up -d
 
+up-with-badger: ## start persistent jaeger (Badger on disk, UI :16688, OTLP :4319)
+	docker compose --profile badger up -d jaeger-badger
+
 down: ## stop collector + jaeger
 	docker compose down

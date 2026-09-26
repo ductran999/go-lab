@@ -12,6 +12,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -81,21 +82,32 @@ func Setup(ctx context.Context, info ServiceInfo, endpoint string) (func(context
 	)
 
 	otel.SetTracerProvider(provider)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	return provider.Shutdown, nil
 }
 
-// Business stamps tenant/user onto the current span. Call it in
-// delivery (post-auth), never in usecase: observability stops at
-// the boundary, business logic stays pure.
-func Business(ctx context.Context, tenantID, userID string) {
+// Business stamps tenant/user onto the current span AND into baggage:
+// attributes live one span, baggage rides the whole journey (svc-b
+// reads it without re-auth). Call it in delivery (post-auth).
+func Business(ctx context.Context, tenantID, userID string) context.Context {
 	span := trace.SpanFromContext(ctx)
 
 	span.SetAttributes(
 		attribute.String("tenant.id", tenantID),
 		attribute.String("user.id", userID),
 	)
+
+	member1, _ := baggage.NewMember("tenant.id", tenantID)
+	member2, _ := baggage.NewMember("user.id", userID)
+
+	bag, _ := baggage.FromContext(ctx).SetMember(member1)
+	bag, _ = bag.SetMember(member2)
+
+	return baggage.ContextWithBaggage(ctx, bag)
 }
 
 // TraceIDOf reads the incoming parent trace id from the raw

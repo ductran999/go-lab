@@ -72,7 +72,7 @@ func Auth(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), tenantKey, claims.TenantID)
 		ctx = context.WithValue(ctx, userKey, claims.UserID)
 
-		tracing.Business(ctx, claims.TenantID, claims.UserID)
+		ctx = tracing.Business(ctx, claims.TenantID, claims.UserID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

@@ -25,3 +25,16 @@
   slow, drop the boring 99%).
 - Async hops (queues) carry context in the message envelope —
   headers die at the broker (see `messaging/`).
+
+## 3. Baggage (business context that rides along)
+
+- Meaning: attributes die with their span; baggage (`tenant.id`,
+  `user.id`) travels the whole journey with traceparent — downstream
+  reads without re-auth or re-lookup. Set once at auth (`Business()`),
+  read anywhere.
+- No dedicated UI: baggage flies in headers; Jaeger shows only what
+  you `Set` as attributes. Our svc-b log line proves it arrived.
+- Traps: keep it tiny (header caps ~8KB, proxies cut big ones —
+  IDs not profiles); never secrets/PII (plaintext, logged
+  everywhere — strip past trust boundaries); never trust blindly
+  (clients forge it — JWT verifies, baggage conveniences).
