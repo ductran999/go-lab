@@ -6,10 +6,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -21,7 +23,7 @@ const reqIDKey ctxKey = "reqID"
 // withReqID stamps each request with an id (middleware).
 func withReqID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := fmt.Sprintf("%d", time.Now().UnixNano())
+		id := strconv.FormatInt(time.Now().UnixNano(), 10)
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), reqIDKey, id)))
 	})
 }
@@ -59,7 +61,7 @@ func main() {
 	}
 
 	err := server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalln("lesson failed:", err)
 	}
 }

@@ -5,7 +5,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os/signal"
@@ -43,10 +43,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// main() must block on this until the drain actually finishes -
-	// otherwise ListenAndServe() returns the instant Shutdown() is
-	// *called* (not when it completes), main() falls through, and the
-	// process exits, killing the drain goroutine mid-flight.
+	// main blocks here until the drain actually finishes: without this,
+	// ListenAndServe returns the instant Shutdown is *called* (not when
+	// it completes), main falls through, and the process exits mid-drain.
 	shutdownDone := make(chan struct{})
 
 	go func() {
@@ -55,20 +54,23 @@ func main() {
 		<-ctx.Done()
 		slog.Info("draining...")
 
-		grace, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		// Fresh deadline, inherited (not tied to the signal itself).
+		grace, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 		defer cancel()
 
-		if err := server.Shutdown(grace); err != nil {
-			slog.Error("drain failed", "error", err)
+		shutdownErr := server.Shutdown(grace)
+		if shutdownErr != nil {
+			slog.Error("drain failed", "error", shutdownErr)
 		}
 	}()
 
 	slog.Info("lesson 3: lifecycle", "addr", server.Addr)
 
 	err := server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		log.Fatalln("lesson failed:", err)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error("lesson failed", "error", err)
+		return
 	}
 
-	<-shutdownDone // wait for the actual drain to complete before exiting
+	<-shutdownDone
 }

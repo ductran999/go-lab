@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"log/slog"
 	"net/http"
@@ -47,7 +48,7 @@ func main() {
 	}
 
 	err := server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalln("lesson failed:", err)
 	}
 }

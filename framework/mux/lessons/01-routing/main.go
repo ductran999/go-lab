@@ -19,7 +19,13 @@ func main() {
 	hdl := &Handler{}
 
 	mux.HandleFunc("GET /todos", hdl.ListTodos)
+	// Wildcard registered FIRST on purpose: order does NOT matter.
+	// Precedence decides (static beats wildcard), so /todos/new still
+	// wins below. Swap these two lines and curl to prove it.
 	mux.HandleFunc("GET /todos/{id}", hdl.GetTodo)
+	mux.HandleFunc("GET /todos/new", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, "new form\n")
+	})
 	// {$} anchors: /files/ matches, /files/a/b does not.
 	// /files (no slash) 301-redirects to /files/: ServeMux cleans the
 	// path, finds the registered /files/ subtree, and canonicalizes.

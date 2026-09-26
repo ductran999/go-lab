@@ -51,6 +51,7 @@ func (h *Handler) Me(w http.ResponseWriter, _ *http.Request) {
 func logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+
 		next.ServeHTTP(w, r)
 		slog.Info("http", "method", r.Method, "path", r.URL.Path, "dur", time.Since(start))
 	})
