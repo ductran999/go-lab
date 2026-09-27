@@ -14,3 +14,10 @@ bytes rest" (vs `network/` where they travel).
 
 Ties: `../network/http/cache/` (HTTP caching headers over these
 backends), `../observability/` (trace the queries).
+
+## Roadmap
+
+- [ ] `pgbadger/` — Postgres log analysis: slow queries, top SQL, checkpoints
+- [ ] `pgbouncer/` — connection pooling: transaction vs session mode, benchmarks
+- [ ] `cassandra/` — wide-column: data modeling by query, tunable consistency
+- [ ] `elasticsearch/` — full-text search: analyzers, relevance scoring

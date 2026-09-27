@@ -4,6 +4,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -57,14 +58,14 @@ func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, found := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !found || token == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			reject(w, r, "missing")
 
 			return
 		}
 
 		claims, err := verifyJWT(token)
 		if err != nil {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			reject(w, r, "invalid")
 
 			return
 		}
@@ -145,6 +146,36 @@ func UserOf(ctx context.Context) string {
 	user, _ := ctx.Value(userKey).(string)
 
 	return user
+}
+
+// reject logs the denial (the only line 401s ever get: Logging sits
+// after Auth and never runs for them) and writes the 401 body.
+// Security audit needs failed attempts more than successes.
+func reject(w http.ResponseWriter, r *http.Request, reason string) {
+	live := trace.SpanFromContext(r.Context()).SpanContext()
+	slog.Info("auth_rejected",
+		"method", r.Method, "path", r.URL.Path, "reason", reason,
+		"trace.id", live.TraceID().String(),
+		"req.id", requestid.Of(r.Context()))
+
+	respUnAuth(w, r)
+}
+
+// respUnAuth writes the 401 body with the live span id (otelhttp
+// already started it — even rejections are traced).
+func respUnAuth(w http.ResponseWriter, r *http.Request) {
+	// (even 401s are traced). Support searches by THIS id.
+	live := trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusUnauthorized)
+
+	// Single encode: Marshal-then-Encode would base64 the bytes.
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"message":    "Unauthorized",
+		"trace_id":   live,
+		"request_id": requestid.Of(r.Context()),
+	})
 }
 
 type recorder struct {
