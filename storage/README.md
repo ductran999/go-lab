@@ -18,6 +18,7 @@ backends), `../observability/` (trace the queries).
 ## Roadmap
 
 - [x] `pgbouncer/` — pooling demo: transaction mode, gotchas, pgbench compare
+- [ ] `gorm-vs-pgx.md` — compare: ergonomics vs control, hooks vs raw, pool behavior
 - [ ] `pgbadger/` — Postgres log analysis: slow queries, top SQL, checkpoints
 - [ ] `pgbouncer/` — connection pooling: transaction vs session mode, benchmarks
 - [ ] `cassandra/` — wide-column: data modeling by query, tunable consistency

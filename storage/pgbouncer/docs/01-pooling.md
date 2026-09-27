@@ -41,6 +41,8 @@ flowchart LR
   transactions still works; `SET` outside tx does not.
 - Prepared statements: server-side `PREPARE` dies with the checkout
   → use `max_prepared_statements` or client-side prepares (pgx does).
+  Live proof (`make prepdie`): PREPARE once, EXECUTE over 10 fresh
+  checkouts → `lived=0 died=10` (DISCARD ALL wipes even same-backend).
 - LISTEN/NOTIFY: needs a sticky conn — our realtime listener must
   bypass the pool (dedicated direct conn, as documented).
 - Advisory locks: released at tx end — don't span transactions.
@@ -107,3 +109,58 @@ Same server backend twice (pool max 1, PID proves it):
 - Ad-hoc = made up on the spot, run once (incident probe, manual
   fix). Fresh plan fits; no cache wasted on the unrepeatable.
 - Rule: repeated OLTP → extended; ad-hoc/multi-statement → simple.
+
+## 7. Memory: where data rests on reads
+
+```mermaid
+flowchart LR
+    Q[query] --> S[shared buffers<br/>128MB demo]
+    S -- miss --> O[OS page cache<br/>free ride]
+    O -- miss --> D[disk]
+```
+
+| Layer            | What                                        | Size rule                |
+| ---------------- | ------------------------------------------- | ------------------------ |
+| `shared_buffers` | PG data pages (8KB), survives queries       | ~25% RAM prod            |
+| OS cache         | Same pages, kernel-kept                     | Whatever RAM remains     |
+| Connections      | ~10MB × backends (work_mem extra per sort!) | Bound by max_connections |
+
+- Double-cache is normal (PG + OS hold copies); small
+  `shared_buffers` still flies via OS cache, just less controlled.
+- `work_mem` (per sort/hash, per connection!) explodes with many
+  backends — another reason pooling saves RAM.
+
+## 8. How a query flows (routing, auth, protocol)
+
+```text
+client --SCRAM once--> pool --SCRAM once--> postgres
+  | connect: auth       | holds warm backends
+  | tx begin: assigned a free backend (hot first)
+  | query: PG wire protocol (Parse/Bind/Execute), bytes forwarded
+  | COMMIT: backend DISCARDed back to pool
+  | no free backend: client queues (cl_waiting)
+```
+
+```mermaid
+flowchart LR
+    subgraph Direct["direct: postmaster forks"]
+        C1[c1] --> F1[(backend)]
+        C2[c2] --> F2[(backend)]
+        C3[c3] -.->|53300 past max| X([refused])
+    end
+    subgraph Pooled["pooled: assign + queue"]
+        D1[d1] --> P[(5 backends)]
+        D2[d2] --> P
+        D3[d3] -.->|waits| P
+    end
+```
+
+- Without a pooler, the **postmaster** assigns: fork 1 backend per
+  connection, 1:1 hard, no queue (past `max_connections` → `53300`).
+  The pooler exists to replace this fork-per-connect with assignment.
+
+- Auth per **connection setup**, never per query (both hops).
+- Assignment is **identity-blind**: any free backend, hot first;
+  pools split by user/db, never by tenant (hence `SET LOCAL`).
+- Protocol is PG wire (L7) end to end; the pool parses just enough
+  (startup, tx boundaries) and forwards the rest blind.

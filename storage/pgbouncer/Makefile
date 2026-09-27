@@ -11,6 +11,9 @@ help: ## show this help
 build: ## build demo binaries into ./bin (never bare go build)
 	go build -o ./bin/demo ./cmd/demo
 	go build -o ./bin/setleak ./cmd/setleak
+	go build -o ./bin/gsession ./cmd/gsession
+	go build -o ./bin/prepdie ./cmd/prepdie
+	go build -o ./bin/twobackends ./cmd/twobackends
 
 up: ## start postgres (:5435) + pgbouncer (:6432)
 	docker compose up -d
@@ -38,14 +41,24 @@ conns: ## show max_connections + live counts (direct vs pool)
 	PGPASSWORD=password123 psql -h localhost -p 5435 -U admin -d pooldb -tAc "SHOW max_connections;"
 	PGPASSWORD=password123 psql -h localhost -p 5435 -U admin -d pooldb -c "SELECT state, count(*) FROM pg_stat_activity GROUP BY state;"
 	@echo "== pool :6432 =="
-	PGPASSWORD=password123 psql -h localhost -p 6432 -U admin -d pooldb -tAc "SHOW max_connections;" || true
-	PGPASSWORD=password123 psql -h localhost -p 6432 pgbouncer -U admin -c "SHOW POOLS;" 2>/dev/null || echo "(admin console needs stats_users — see README)"
+	PGPASSWORD=password123 psql -h localhost -p 6432 pgbouncer -U admin -c "SHOW POOLS;"
+	@echo "== pool stats =="
+	PGPASSWORD=password123 psql -h localhost -p 6432 pgbouncer -U admin -c "SHOW STATS;"
 
 psql: ## open psql straight into postgres (:5435)
 	PGPASSWORD=password123 psql -h localhost -p 5435 -U admin -d pooldb
 
 setleak: ## prove SET leaks but SET LOCAL does not (needs pool up)
 	go run ./cmd/setleak -dsn 'postgres://admin:password123@localhost:6432/pooldb?sslmode=disable'
+
+gsession: ## show session state via GORM: pool (anywhere) vs pinned conn
+	go run ./cmd/gsession -dsn 'postgres://admin:password123@localhost:6432/pooldb?sslmode=disable'
+
+prepdie: ## prove server-side PREPARE dies across checkouts (needs pool up)
+	go run ./cmd/prepdie -dsn 'postgres://admin:password123@localhost:6432/pooldb?sslmode=disable'
+
+twobackends: ## hold two checkouts, print both backend PIDs (needs pool up)
+	go run ./cmd/twobackends -dsn 'postgres://admin:password123@localhost:6432/pooldb?sslmode=disable'
 
 conf: ## print effective values + the mounted postgresql.conf
 	PGPASSWORD=password123 psql -h localhost -p 5435 -U admin -d pooldb -tAc \

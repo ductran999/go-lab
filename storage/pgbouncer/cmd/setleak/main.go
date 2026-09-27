@@ -34,6 +34,44 @@ func backendOf(ctx context.Context, conn *pgxpool.Conn) int32 {
 	return pid
 }
 
+// localPort returns the app-side socket of a checkout (hop 1: app).
+func localPort(conn *pgxpool.Conn) string {
+	return conn.Conn().PgConn().Conn().LocalAddr().String()
+}
+
+// bouncerServers asks the admin console how many server backends the
+// pool holds right now (hop 2: bouncer). Needs ADMIN_USERS set.
+func bouncerServers(ctx context.Context, dsn string) string {
+	cfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return "(bad dsn)"
+	}
+
+	cfg.ConnConfig.Database = "pgbouncer"
+
+	admin, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return "(admin refused)"
+	}
+
+	defer admin.Close()
+
+	rows, err := admin.Query(ctx, "SHOW SERVERS")
+	if err != nil {
+		return "(admin console refused: set ADMIN_USERS)"
+	}
+
+	defer rows.Close()
+
+	count := 0
+
+	for rows.Next() {
+		count++
+	}
+
+	return fmt.Sprintf("%d server backend(s) held", count)
+}
+
 // showVar reads a custom var, reporting missing as <unset>.
 func showVar(ctx context.Context, conn *pgxpool.Conn, name string) string {
 	var value string
@@ -74,23 +112,27 @@ func main() {
 		fail(err)
 	}
 
-	fmt.Printf("[checkout A] backend pid=%d, myapp.tenant=%s\n", backendOf(ctx, conn), showVar(ctx, conn, "myapp.tenant"))
+	fmt.Printf("[checkout A] app=%s backend pid=%d, myapp.tenant=%s\n",
+		localPort(conn), backendOf(ctx, conn), showVar(ctx, conn, "myapp.tenant"))
 
 	_, err = conn.Exec(ctx, "SET myapp.tenant = 't1'")
 	if err != nil {
 		fail(err)
 	}
 
-	fmt.Printf("[checkout A] SET myapp.tenant='t1', backend pid=%d\n", backendOf(ctx, conn))
+	fmt.Printf("[checkout A] SET myapp.tenant='t1' (app=%s backend pid=%d)\n",
+		localPort(conn), backendOf(ctx, conn))
 	conn.Release()
 	fmt.Println("[checkout A] released back to pool")
+	fmt.Println("[bouncer]", bouncerServers(ctx, *dsn))
 
 	conn, err = pool.Acquire(ctx)
 	if err != nil {
 		fail(err)
 	}
 
-	fmt.Printf("[checkout B] backend pid=%d, myapp.tenant=%s\n", backendOf(ctx, conn), showVar(ctx, conn, "myapp.tenant"))
+	fmt.Printf("[checkout B] app=%s backend pid=%d, myapp.tenant=%s\n",
+		localPort(conn), backendOf(ctx, conn), showVar(ctx, conn, "myapp.tenant"))
 	conn.Release()
 
 	fmt.Println("== 2. SET LOCAL (transaction-scoped) ==")
@@ -138,5 +180,6 @@ func main() {
 
 	defer conn.Release()
 
-	fmt.Printf("[checkout D] backend pid=%d, myapp.tenant=%s\n", backendOf(ctx, conn), showVar(ctx, conn, "myapp.tenant"))
+	fmt.Printf("[checkout D] app=%s backend pid=%d, myapp.tenant=%s\n",
+		localPort(conn), backendOf(ctx, conn), showVar(ctx, conn, "myapp.tenant"))
 }

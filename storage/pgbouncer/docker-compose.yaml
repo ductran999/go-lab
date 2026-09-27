@@ -12,6 +12,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
     volumes:
       - pg_pool_data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
     ports:
       - "5435:5432"
     healthcheck:
@@ -35,6 +36,7 @@ services:
       POOL_MODE: transaction
       MAX_CLIENT_CONN: "200"
       DEFAULT_POOL_SIZE: "5"
+      ADMIN_USERS: admin
     ports:
       - "6432:5432"
     depends_on:
