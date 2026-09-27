@@ -8,8 +8,9 @@ help: ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(firstword $(MAKEFILE_LIST)) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
-build: ## build demo binary into ./bin (never bare go build)
+build: ## build demo binaries into ./bin (never bare go build)
 	go build -o ./bin/demo ./cmd/demo
+	go build -o ./bin/setleak ./cmd/setleak
 
 up: ## start postgres (:5435) + pgbouncer (:6432)
 	docker compose up -d
@@ -42,6 +43,9 @@ conns: ## show max_connections + live counts (direct vs pool)
 
 psql: ## open psql straight into postgres (:5435)
 	PGPASSWORD=password123 psql -h localhost -p 5435 -U admin -d pooldb
+
+setleak: ## prove SET leaks but SET LOCAL does not (needs pool up)
+	go run ./cmd/setleak -dsn 'postgres://admin:password123@localhost:6432/pooldb?sslmode=disable'
 
 conf: ## print effective values + the mounted postgresql.conf
 	PGPASSWORD=password123 psql -h localhost -p 5435 -U admin -d pooldb -tAc \
