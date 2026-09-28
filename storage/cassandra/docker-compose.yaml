@@ -1,0 +1,15 @@
+services:
+  cassandra:
+    image: cassandra:5.0
+    container_name: cass-lab
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_DC=lab
+      - CASSANDRA_RACK=r1
+      - JVM_OPTS=-Xms1G -Xmx1G
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
