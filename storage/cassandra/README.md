@@ -20,4 +20,7 @@ make cql    # open cqlsh for ad-hoc queries
 
 ## Docs
 
-- `docs/01-cassandra.md` — data modeling, consistency levels
+- `docs/00-cap-theorem.md` — CAP triangle, CP vs AP, the dial
+- `docs/01-quorum.md` — RF/N/R/W, the W+R>RF rule, failure walk
+- `docs/02-cassandra.md` — data modeling, consistency levels
+- `docs/03-ring.md` — token ring, gossip, vnodes, graceful death
