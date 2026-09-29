@@ -3,8 +3,24 @@
 > TL;DR: **partition key** decides _which node_, **clustering key**
 > decides _order inside_. Design tables from queries, not entities.
 > Consistency is a **dial** per query (ONE → QUORUM → ALL).
+> Foundation: [`00-cap-theorem.md`](00-cap-theorem.md).
 
 ## 1. Data modeling (vs SQL instinct)
+
+```text
+keyspace lab
+└── table timeline ── one partition per user ── rows sorted newest-first
+    ┌──────────── partition user_id=7 ────────────┐
+    │ created_at ↓ │ post_id │ body               │
+    │ 10:00        │ aaa     │ "hello"            │
+    │ 09:30        │ bbb     │ "world"            │  ← one read, in order
+    └────────────────────────────────────────────┘
+PRIMARY KEY ((user_id), created_at, post_id)
+              ▲        ▲              ▲
+              │        │              └── tiebreak, unique
+              │        └── clustering: sort + range slice
+              └── partition: which node holds it
+```
 
 | SQL instinct           | Cassandra rule                                         |
 | ---------------------- | ------------------------------------------------------ |
