@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: pg-pkbench
+    environment:
+      POSTGRES_DB: pkdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5438:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d pkdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
