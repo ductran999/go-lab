@@ -3,12 +3,19 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"math"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrBadTimestamp = errors.New("timestamp out of range")
 
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, "demo:", err)
@@ -24,6 +31,23 @@ func ordered(ids []string) bool {
 	}
 
 	return true
+}
+
+// v7BornAt decodes the creation time hidden in a v7 prefix:
+// first 12 hex chars = unix milliseconds.
+func v7BornAt(id string) (time.Time, error) {
+	raw := strings.ReplaceAll(id[:13], "-", "")
+
+	ms, err := strconv.ParseUint(raw, 16, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if ms > math.MaxInt64 {
+		return time.Time{}, ErrBadTimestamp
+	}
+
+	return time.UnixMilli(int64(ms)).UTC(), nil
 }
 
 func main() {
@@ -54,6 +78,22 @@ func main() {
 
 	fmt.Println("v4 generated in sort order:", ordered(v4s))
 	fmt.Println("v7 generated in sort order:", ordered(v7s))
+
+	born, err := v7BornAt(v7s[0])
+	if err != nil {
+		fail(err)
+	}
+
+	fmt.Println("v7[0] born at:", born.Format(time.RFC3339))
+
+	for i, id := range v7s {
+		at, err := v7BornAt(id)
+		if err != nil {
+			fail(err)
+		}
+
+		fmt.Printf("v7[%d] %s born %s\n", i, id, at.Format("15:04:05.000"))
+	}
 
 	sorted := append([]string(nil), v7s...)
 	sort.Strings(sorted)
