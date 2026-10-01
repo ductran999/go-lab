@@ -17,12 +17,13 @@ $ cd network
 - CORS mechanics: preflight, credentials, common misconfigs.
 - Observability: logs/metrics/traces joined by trace ID.
 
-## Roadmap (grouped by layer)
+## Roadmap (grouped by API style)
 
 - [x] `docs/` — request journey, API contracts
-- [x] `http/` — cors, auth, cache, negotiation, forwarding, secheaders, range
+- [x] `headers/` — cors, auth, cache, negotiation, forwarding, secheaders, range
+- [x] `rest/` — http2/http3 versions (H1 implicit everywhere)
 - [x] `realtime/` — websocket (Origin/PNA), sse (headers/resume/usecases)
-- [x] `rpc/` — grpc (unary/streams/interceptors), http2 (REST on H2), http3 (QUIC)
+- [x] `rpc/` — grpc only (unary/streams/interceptors)
 - [x] `infra/` — load-balancing harness + algorithms doc
 - [x] ~~old flat items~~ — retired into groups above
 

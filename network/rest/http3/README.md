@@ -4,7 +4,7 @@ Server on `:8108/udp` (QUIC, not TCP). Unary `/hello` + finite
 `/stream`. Certs shared with the grpc lab demo CA (`localhost`).
 
 ```bash
-# Change DIR (relative cert paths ../grpc/certs resolve from here)
+# Change DIR (relative cert paths ../../rpc/grpc/certs resolve from here)
 $ cd network/http3
 ```
 

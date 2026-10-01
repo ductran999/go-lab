@@ -1,8 +1,8 @@
-# HTTP labs — grouped by header cluster
+# Header labs — grouped by header cluster
 
 ```bash
 # Change DIR
-$ cd network/http
+$ cd network/headers
 ```
 
 | Headers                                   | Lab            | Core lesson                     |

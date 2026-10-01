@@ -22,7 +22,7 @@ func fail(err error) {
 }
 
 func main() {
-	caPEM, err := os.ReadFile(environ.Get("HTTP3_CA", "../grpc/certs/ca.crt"))
+	caPEM, err := os.ReadFile(environ.Get("HTTP3_CA", "../../rpc/grpc/certs/ca.crt"))
 	if err != nil {
 		fail(fmt.Errorf("ca: %w", err))
 	}

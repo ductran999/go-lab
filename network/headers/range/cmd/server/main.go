@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"go-lab/network/http/range/internal/blob"
+	"go-lab/network/headers/range/internal/blob"
 
 	"github.com/ductran999/shared-pkg/environ"
 )

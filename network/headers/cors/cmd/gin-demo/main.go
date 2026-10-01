@@ -16,7 +16,7 @@ import (
 
 	"github.com/ductran999/shared-pkg/environ"
 
-	"go-lab/network/http/cors/internal/session"
+	"go-lab/network/headers/cors/internal/session"
 )
 
 func fail(err error) {

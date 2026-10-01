@@ -18,10 +18,10 @@ make run-client  # terminal 2 — proto=HTTP/2.0 both calls
 ## TLS twin (same handlers, ALPN H2)
 
 ```bash
-TLS_CERT=../grpc/certs/server.crt TLS_KEY=../grpc/certs/server.key make run-server &
-TLS_CA=../grpc/certs/ca.crt make run-client
+TLS_CERT=../../rpc/grpc/certs/server.crt TLS_KEY=../../rpc/grpc/certs/server.key make run-server &
+TLS_CA=../../rpc/grpc/certs/ca.crt make run-client
 # proto=HTTP/2.0 over TLS now — curl with a modern build works too:
-# curl --http2 https://localhost:8109/todos --cacert ../grpc/certs/ca.crt
+# curl --http2 https://localhost:8109/todos --cacert ../../rpc/grpc/certs/ca.crt
 ```
 
 `curl --http2-prior-knowledge` also speaks h2c (needs curl 7.47+;

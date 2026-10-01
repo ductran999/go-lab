@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"go-lab/network/http/forwarding/internal/forward"
+	"go-lab/network/headers/forwarding/internal/forward"
 
 	"github.com/ductran999/shared-pkg/environ"
 )

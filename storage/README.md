@@ -12,7 +12,7 @@ bytes rest" (vs `network/` where they travel).
 | `realtime/`  | Postgres NOTIFY → SSE bridge (JWT + resume)                   |
 | `cache/`     | Backends compared: Redis, Memcached, Dragonfly, KeyDB, in-mem |
 
-Ties: `../network/http/cache/` (HTTP caching headers over these
+Ties: `../network/headers/cache/` (HTTP caching headers over these
 backends), `../observability/` (trace the queries).
 
 ## Roadmap

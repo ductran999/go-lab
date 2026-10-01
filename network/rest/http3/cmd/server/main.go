@@ -53,8 +53,8 @@ func stream(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	cert, err := tls.LoadX509KeyPair(
-		environ.Get("TLS_CERT", "../grpc/certs/server.crt"),
-		environ.Get("TLS_KEY", "../grpc/certs/server.key"),
+		environ.Get("TLS_CERT", "../../rpc/grpc/certs/server.crt"),
+		environ.Get("TLS_KEY", "../../rpc/grpc/certs/server.key"),
 	)
 	if err != nil {
 		fail(fmt.Errorf("tls: %w", err))

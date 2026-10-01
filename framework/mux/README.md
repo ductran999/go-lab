@@ -5,7 +5,7 @@ static, testing. Each lesson runs standalone.
 
 ```bash
 # Change DIR
-$ cd network/http/mux
+$ cd framework/mux
 ```
 
 ## Lessons

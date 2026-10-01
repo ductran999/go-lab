@@ -34,5 +34,5 @@ THEN the normal WS handshake (Origin still checked).
 
 - Hardcoded `localhost:8093` died: `ORIGINS` env holds the
   comma-separated allowlist (per-env config, no rebuild).
-- Edge still strips/forwards honestly (see `../../http/forwarding/`);
+- Edge still strips/forwards honestly (see `../../headers/forwarding/`);
   PNA + allowlist + gateway trust compose, each checks one thing.
