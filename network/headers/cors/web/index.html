@@ -30,14 +30,14 @@
         <option value="http://localhost:8092">gin-contrib :8092</option>
       </select>
     </p>
-<button id="ok">GET /api/ping (pass CORS)</button>
-      <button id="blocked">GET /plain/ping (blocked: no ACAO)</button>
-      <button id="put">PUT /api/ping (preflight, compare browsers)</button>
-      <button id="login">POST /cred/login (set HttpOnly cookie)</button>
-      <button id="me">GET /cred/me with credentials (prove cookie sent)</button>
-      <button id="post">POST /api/ping plain (simple, no preflight)</button>
-      <button id="trace">GET /api/trace (exposed vs hidden headers)</button>
-      <button id="clear">Clear</button>
+    <button id="ok">GET /api/ping (pass CORS)</button>
+    <button id="blocked">GET /plain/ping (blocked: no ACAO)</button>
+    <button id="put">PUT /api/ping (preflight, compare browsers)</button>
+    <button id="login">POST /cred/login (set HttpOnly cookie)</button>
+    <button id="me">GET /cred/me with credentials (prove cookie sent)</button>
+    <button id="post">POST /api/ping plain (simple, no preflight)</button>
+    <button id="trace">GET /api/trace (exposed vs hidden headers)</button>
+    <button id="clear">Clear</button>
     <div id="log"></div>
     <script>
       const log = document.getElementById("log");
@@ -74,7 +74,11 @@
             method: "POST",
             credentials: "include",
           });
-          add("login → " + r.status + " (check DevTools Application cookies: HttpOnly, JS can't read it)");
+          add(
+            "login → " +
+              r.status +
+              " (check DevTools Application cookies: HttpOnly, JS can't read it)",
+          );
         } catch (e) {
           add("login → BLOCKED: " + e);
         }
