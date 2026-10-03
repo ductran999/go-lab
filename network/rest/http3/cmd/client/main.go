@@ -3,8 +3,10 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +15,7 @@ import (
 	"github.com/quic-go/quic-go/http3"
 
 	"github.com/ductran999/shared-pkg/environ"
+	"github.com/ductran999/shared-pkg/pretty/display"
 )
 
 func fail(err error) {
@@ -46,7 +49,7 @@ func main() {
 	body, _ := io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 
-	fmt.Printf("hello: proto=%s body=%s", resp.Proto, body)
+	show("GET", "/hello", resp.Proto, resp.Status, body)
 
 	resp, err = client.Get(base + "/stream")
 	if err != nil {
@@ -57,10 +60,57 @@ func main() {
 		_ = resp.Body.Close()
 	}()
 
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		fail(err)
+	// Streaming read: print each event as it arrives (not ReadAll —
+	// that waits for EOF and hides the stream nature).
+	fmt.Printf("stream: proto=%s status=%s (live)\n", resp.Proto, resp.Status)
+
+	scanner := bufio.NewScanner(resp.Body)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			fmt.Println("  [dispatch] blank line → event fires")
+			continue
+		}
+
+		if line[0] == ':' {
+			fmt.Println("  [heartbeat]", line)
+			continue
+		}
+
+		// The server's closing event, not data: stop cleanly on it.
+		if line == "event: done" {
+			fmt.Println("  [done] server closing event → break")
+			break
+		}
+
+		fmt.Println("  [data]", line)
 	}
 
-	fmt.Printf("stream: proto=%s\n%s", resp.Proto, body)
+	scanErr := scanner.Err()
+	if scanErr != nil {
+		fail(scanErr)
+	}
+
+	fmt.Println("stream ended (FIN received, clean EOF)")
+}
+
+func show(method, path, proto, status string, body []byte) {
+	var decoded any
+
+	decodeErr := json.Unmarshal(body, &decoded)
+	if decodeErr != nil {
+		decoded = string(body)
+	}
+
+	displayErr := display.PrintJSON(map[string]any{
+		"method": method,
+		"path":   path,
+		"proto":  proto,
+		"status": status,
+		"body":   decoded,
+	})
+	if displayErr != nil {
+		fail(displayErr)
+	}
 }
