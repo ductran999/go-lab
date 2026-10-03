@@ -26,22 +26,26 @@ func run() int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	w := scheduler.New(
-		scheduler.Job{Name: "demo", Schedule: "@every 5s", Run: guards.SkipOverlap(jobs.Demo)},
+	all := []scheduler.Job{
+		{Name: "demo", Schedule: "@every 5s", Run: guards.SkipOverlap(jobs.Demo)},
 		// Combined: spread starts AND drop overlaps. Either alone leaks.
-		scheduler.Job{
+		{
 			Name:     "nightly",
 			Schedule: "@every 7s",
 			Run:      guards.SkipOverlap(guards.Jitter(jobs.Demo, 2*time.Second)),
 		},
 		// Watchdog: demo never succeeds (always cancelled), so this pages
 		// every round — the SLA countdown shape (deadline + alert on miss).
-		scheduler.Job{
+		{
 			Name:     "sla-demo",
 			Schedule: "@every 10s",
 			Run:      jobs.SLAWatcher("demo", 8*time.Second),
 		},
-	)
+	}
+
+	// Leader election lives in cmd/leader (needs PG_DSN): this binary
+	// stays dependency-free of databases.
+	w := scheduler.New(all...)
 
 	err := w.StartAll(ctx)
 	if err != nil {
