@@ -55,7 +55,7 @@ func main() {
 		// no upgrade dance, no x/net needed.
 		tr := &http.Transport{}
 		tr.Protocols = &http.Protocols{}
-		tr.Protocols.SetHTTP1(true)
+		tr.Protocols.SetHTTP1(false)
 		tr.Protocols.SetUnencryptedHTTP2(true)
 
 		client = &http.Client{Transport: tr}
