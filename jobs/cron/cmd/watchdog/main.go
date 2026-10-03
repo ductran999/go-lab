@@ -1,5 +1,6 @@
-// Command cron runs the demo job on schedule: scheduler ticks,
-// guards protect, jobs work. Thin main: wiring only.
+// Command watchdog is the SLA countdown R&D sandbox: a job that never
+// succeeds plus a watcher that pages on silence. Separate main so the
+// cron demo stays clean. Usage: go run ./cmd/watchdog
 package main
 
 import (
@@ -27,20 +28,10 @@ func run() int {
 	defer cancel()
 
 	w := scheduler.New(
-		scheduler.Job{Name: "demo", Schedule: "@every 5s", Run: guards.SkipOverlap(jobs.Demo)},
-		// Combined: spread starts AND drop overlaps. Either alone leaks.
-		scheduler.Job{
-			Name:     "nightly",
-			Schedule: "@every 7s",
-			Run:      guards.SkipOverlap(guards.Jitter(jobs.Demo, 2*time.Second)),
-		},
-		// Watchdog: demo never succeeds (always cancelled), so this pages
-		// every round — the SLA countdown shape (deadline + alert on miss).
-		scheduler.Job{
-			Name:     "sla-demo",
-			Schedule: "@every 10s",
-			Run:      jobs.SLAWatcher("demo", 8*time.Second),
-		},
+		// Never succeeds (Demo always cancels): the watcher pages every round.
+		scheduler.Job{Name: "flaky", Schedule: "@every 5s", Run: guards.SkipOverlap(jobs.Demo)},
+		// Watchdog: SLA 8s on "flaky" — expect breach pages, by design.
+		scheduler.Job{Name: "sla-flaky", Schedule: "@every 10s", Run: jobs.SLAWatcher("flaky", 8*time.Second)},
 	)
 
 	err := w.StartAll(ctx)

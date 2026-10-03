@@ -22,6 +22,22 @@ make run  # watch trigger → deadline → next round; Ctrl-C drains
 make escape  # prove `running` escapes to heap (closure outlives setup)
 ```
 
+## SLI/SLO/SLA (the trio)
+
+- **SLI** (Indicator): the number — uptime 99.9%, p99 < 200ms.
+- **SLO** (Objective): internal target — keep SLI above 99.9%.
+- **SLA** (Agreement): contract with teeth — miss SLO, pay up.
+- SLI measures → SLO promises in-house → SLA signs with customers.
+
+## Why jitter (thundering herd)
+
+100 jobs (or 100 replicas) on `0 2 * * *` fire the same second:
+DB/cache stampede, everything slow, alerts fire. Random 0..N delay
+per trigger spreads starts — herd becomes a line. Compose with
+overlap-drop for stragglers: `SkipOverlap(Jitter(job, 2s))`.
+Neither alone suffices (jitter still collides sometimes; overlap
+without jitter stampedes together every round).
+
 ## Model: one heap cell, many stacks
 
 ```text
