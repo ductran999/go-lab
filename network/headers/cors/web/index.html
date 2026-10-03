@@ -28,6 +28,7 @@
       <select id="base">
         <option value="http://localhost:8090">hand-rolled :8090</option>
         <option value="http://localhost:8092">gin-contrib :8092</option>
+        <option value="http://api.127.0.0.1.nip.io:8090">backend:8092</option>
       </select>
     </p>
     <button id="ok">GET /api/ping (pass CORS)</button>
@@ -35,6 +36,21 @@
     <button id="put">PUT /api/ping (preflight, compare browsers)</button>
     <button id="login">POST /cred/login (set HttpOnly cookie)</button>
     <button id="me">GET /cred/me with credentials (prove cookie sent)</button>
+    <h2>
+      SameSite (needs app.test + api.test in /etc/hosts, open page via
+      app.test:8091)
+    </h2>
+    <button id="mode-strict">Set Strict cookie</button>
+    <button id="mode-lax">Set Lax cookie</button>
+    <button id="mode-none">Set None cookie</button>
+    <button id="me-fetch">
+      fetch /cred/me (background: Strict never, None always)
+    </button>
+    <p>
+      <a id="whoami" href="#"
+        >Open /cred/whoami in this tab (top-level: Lax + None pass)</a
+      >
+    </p>
     <button id="post">POST /api/ping plain (simple, no preflight)</button>
     <button id="trace">GET /api/trace (exposed vs hidden headers)</button>
     <button id="clear">Clear</button>
@@ -73,6 +89,8 @@
           const r = await fetch(base() + "/cred/login", {
             method: "POST",
             credentials: "include",
+            // credentials: "omit",
+            // credentials: "same-origin",
           });
           add(
             "login → " +
@@ -91,6 +109,33 @@
           add("me → " + r.status + " " + (await r.text()));
         } catch (e) {
           add("me → BLOCKED: " + e);
+        }
+      };
+      const mode = (m) => async () => {
+        try {
+          // api.test host: replace localhost:8090 to go cross-site for real
+          const api = base().replace("localhost", "api.test");
+          const r = await fetch(api + "/cred/mode/" + m, {
+            credentials: "include",
+          });
+          add(m + " → " + r.status + " " + (await r.text()));
+          document.getElementById("whoami").href = api + "/cred/whoami";
+          window._api = api;
+        } catch (e) {
+          add(m + " → BLOCKED: " + e);
+        }
+      };
+      document.getElementById("mode-strict").onclick = mode("strict");
+      document.getElementById("mode-lax").onclick = mode("lax");
+      document.getElementById("mode-none").onclick = mode("none");
+      document.getElementById("me-fetch").onclick = async () => {
+        try {
+          const r = await fetch(window._api + "/cred/me", {
+            credentials: "include",
+          });
+          add("fetch me → " + r.status + " " + (await r.text()));
+        } catch (e) {
+          add("fetch me → BLOCKED: " + e);
         }
       };
       document.getElementById("post").onclick = async () => {

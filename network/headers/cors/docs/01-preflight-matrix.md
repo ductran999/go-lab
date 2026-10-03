@@ -2,7 +2,7 @@
 
 **TL;DR:** Preflight exists to **protect legacy servers**: browsers ask
 via side-effect-free OPTIONS before sending "strange" requests
-(JSON, PUT/DELETE, custom headers) that pre-CORS servers never
+`(JSON, PUT/DELETE, custom headers)` that pre-CORS servers never
 expected. No answer → real request never sent → old server untouched.
 It reduces risk, not removes it (curl, simple requests, SSRF bypass
 browsers entirely — server-side auth/validation still mandatory).

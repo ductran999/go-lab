@@ -124,6 +124,8 @@ func main() {
 	cred := r.Group("/cred")
 	cred.POST("/login", session.Login)
 	cred.GET("/me", session.Me)
+	cred.GET("/mode/:mode", session.Mode)
+	cred.GET("/whoami", session.Whoami)
 
 	// No middleware: preflights 404 here.
 	r.GET("/plain/ping", ping)

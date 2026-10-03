@@ -1,6 +1,10 @@
 # Credentials Mode
 
-**TL;DR:** Credentials need `Allow-Credentials: true` + echoed Origin. `*` is rejected outright (ironclad rule).
+**TL;DR:**
+
+- **Send**: browser needs `credentials: 'include'` (default: nothing cross-origin).
+- **Accept**: server needs echoed `Origin` (never `*`) + `Allow-Credentials: true` + `Vary: Origin`.
+- **Modes**: Strict = never cross-site · Lax = links yes, fetch no · None+Secure = always (TLS only).
 
 Keywords: cookies, echo, Vary.
 
@@ -36,6 +40,32 @@ Setup: `/etc/hosts` → `127.0.0.1 app.test api.test`. Page on `app.test:8091`, 
 | **Strict**               | ❌ Dropped (logged out)            | ❌                    | Banking, admin                     |
 | **Lax** (modern default) | ✅ Sent (straight to dashboard)    | ❌                    | Regular web, balanced              |
 | **None** + `Secure`      | ✅                                 | ✅                    | Cross-site embeds, third-party SSO |
+
+Live demo (page MUST open via `http://app.test:8091`, API base switched to `api.test:8090`):
+
+1. Click **Set Strict/Lax/None cookie** → `GET /cred/mode/:mode` (link target updates).
+2. Click **fetch /cred/me** (background): Strict → 401 always; Lax → 401; None → 200.
+3. Click **Open /cred/whoami** (top-level navigation): Strict → 401; Lax + None → `user: demo-user-1`.
+
+Same cookie, two fates by context — that is the whole Lax lesson.
+
+```text
+browser tab
+└── TOP document (app.test:8091)          ← top-level: address bar points here
+    │   • link click / URL type / submit → whole page changes (navigation)
+    │   • Lax cookie: SENT (user is driving)
+    │
+    ├── <iframe api.test>                 ← nested: page inside page
+    │     Lax cookie: NOT sent (background)
+    ├── fetch() ──→ api.test              ← background: JS behind your back
+    │     Lax cookie: NOT sent
+    └── <img src=api.test>                ← subresource
+          Lax cookie: NOT sent
+```
+
+Top-level = the root browsing context (what the address bar shows).
+Everything inside it (iframes, fetch, images) is nested/background:
+Lax trusts page changes, suspects background work.
 
 - Port differs ≠ different site. Same scheme + registrable domain = same site (`:8091` → `:8090` is same-site).
 - Prod combo: `HttpOnly + Secure + Lax`. `localhost` counts as trustworthy, so `Secure` works over plain http locally.
