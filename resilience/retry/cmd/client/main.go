@@ -26,6 +26,7 @@ func main() {
 	baseMs := flag.Int("baseMs", 50, "backoff base in ms")
 	fail := flag.Int("fail", 10, "server fails the first N hits")
 	path := flag.String("path", "flaky", "server endpoint (flaky, deny)")
+
 	flag.Parse()
 
 	if err := reset(*base, *fail); err != nil {
@@ -40,10 +41,8 @@ func main() {
 	start := time.Now()
 
 	for range *n {
-		wg.Add(1)
 
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
@@ -59,7 +58,7 @@ func main() {
 			}
 
 			ok.Add(1)
-		}()
+		})
 	}
 
 	wg.Wait()

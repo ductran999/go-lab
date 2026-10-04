@@ -84,6 +84,7 @@ func TestInflightReturnsToZero(t *testing.T) {
 	g := inflight.With(map[string]string{"route": "/gauge-test"})
 
 	done := Current.Track("/gauge-test")
+
 	if got := testutil.ToFloat64(g); got != 1 {
 		t.Fatalf("inflight during request = %v, want 1", got)
 	}
