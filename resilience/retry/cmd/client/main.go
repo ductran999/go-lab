@@ -29,7 +29,8 @@ func main() {
 
 	flag.Parse()
 
-	if err := reset(*base, *fail); err != nil {
+	err := reset(*base, *fail)
+	if err != nil {
 		fmt.Println("reset:", err)
 		os.Exit(1)
 	}
@@ -41,16 +42,21 @@ func main() {
 	start := time.Now()
 
 	for range *n {
-
 		wg.Go(func() {
-
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
 			defer cancel()
 
-			err := retry.Call(ctx, *attempts, time.Duration(*baseMs)*time.Millisecond, *jitter, retry.RetryableStatus, func(ctx context.Context) error {
-				return get(ctx, *base+"/"+*path)
-			})
+			err := retry.Call(
+				ctx,
+				*attempts,
+				time.Duration(*baseMs)*time.Millisecond,
+				*jitter,
+				retry.RetryableStatus,
+				func(ctx context.Context) error {
+					return get(ctx, *base+"/"+*path)
+				},
+			)
 			if err != nil {
 				failed.Add(1)
 

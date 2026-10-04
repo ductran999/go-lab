@@ -7,9 +7,16 @@ package harness
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+// errScriptEmpty marks a MockBrain with no steps left.
+var errScriptEmpty = errors.New("script out of steps")
+
+// errBudgetOut marks a run that never reached Done.
+var errBudgetOut = errors.New("budget out")
 
 // Action is one step: call tool with input, or finish with an answer.
 type Action struct {
@@ -106,10 +113,10 @@ func (a Agent) Run(ctx context.Context, goal string) (string, error) {
 			continue
 		}
 
-		history = append(history, fmt.Sprintf("obs: %s", out))
+		history = append(history, "obs: "+out)
 	}
 
-	return "", fmt.Errorf("budget out after %d steps", a.MaxSteps)
+	return "", fmt.Errorf("%w after %d steps", errBudgetOut, a.MaxSteps)
 }
 
 // MockBrain replays scripted actions (each Next pops one). Offline
@@ -121,7 +128,7 @@ type MockBrain struct {
 // Next implements Brain.
 func (m *MockBrain) Next(_ context.Context, _ []string) (Action, error) {
 	if len(m.Script) == 0 {
-		return Action{}, fmt.Errorf("script out of steps")
+		return Action{}, errScriptEmpty
 	}
 
 	next := m.Script[0]

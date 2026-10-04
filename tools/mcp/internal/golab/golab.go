@@ -20,6 +20,12 @@ import (
 // maxLines caps tool output: agents pay per line, forever.
 const maxLines = 50
 
+// ErrBadInput marks rejected tool arguments (empty pattern, out-of-range bench sizes).
+var ErrBadInput = errors.New("bad input")
+
+// ErrBadStatus marks a non-200 exposition fetch.
+var ErrBadStatus = errors.New("bad status")
+
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // BenchRun fires otel/bench.sh with N requests at concurrency C and
@@ -27,13 +33,14 @@ var httpClient = &http.Client{Timeout: 10 * time.Second}
 // Bounds keep a curious agent from benchmarking production to death.
 func BenchRun(labDir string, n, c int) (string, error) {
 	if n < 1 || n > 5000 || c < 1 || c > 200 {
-		return "", fmt.Errorf("n in [1,5000], c in [1,200]: got n=%d c=%d", n, c)
+		return "", fmt.Errorf("%w: n in [1,5000], c in [1,200]: got n=%d c=%d", ErrBadInput, n, c)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 
 	defer cancel()
 
+	//nolint:gosec // ints validated above, fixed script name
 	cmd := exec.CommandContext(ctx, labDir+"/bench.sh", strconv.Itoa(n), strconv.Itoa(c))
 
 	out, err := cmd.CombinedOutput()
@@ -49,7 +56,7 @@ func BenchRun(labDir string, n, c int) (string, error) {
 // everything, so it is rejected — that dump is megabytes.
 func MetricsQuery(metricsURL, pattern string) (string, error) {
 	if strings.TrimSpace(pattern) == "" {
-		return "", errors.New("pattern must not be empty")
+		return "", fmt.Errorf("%w: pattern must not be empty", ErrBadInput)
 	}
 
 	body, err := getBody(metricsURL)
@@ -96,7 +103,7 @@ func getBody(url string) (string, error) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("get %s: status %d", url, resp.StatusCode)
+		return "", fmt.Errorf("%w: get %s: status %d", ErrBadStatus, url, resp.StatusCode)
 	}
 
 	raw, err := io.ReadAll(resp.Body)

@@ -27,7 +27,8 @@ func TestMetricsQueryFiltersAndCaps(t *testing.T) {
 		t.Fatalf("want exactly the 2 matching lines, got:\n%s", out)
 	}
 
-	if _, err := MetricsQuery(srv.URL, ""); err == nil {
+	_, err = MetricsQuery(srv.URL, "")
+	if err == nil {
 		t.Fatal("empty pattern must fail (would dump everything)")
 	}
 
@@ -65,14 +66,16 @@ func TestRetryStatsDumpsBody(t *testing.T) {
 func TestBenchRunBoundsAndStub(t *testing.T) {
 	t.Parallel()
 
-	if _, err := BenchRun(t.TempDir(), 0, 10); err == nil {
+	_, err := BenchRun(t.TempDir(), 0, 10)
+	if err == nil {
 		t.Fatal("n=0 must fail")
 	}
 
 	dir := t.TempDir()
 	stub := "#!/bin/sh\necho \"stub bench $1 $2\"\n"
 
-	err := os.WriteFile(filepath.Join(dir, "bench.sh"), []byte(stub), 0o755)
+	//nolint:gosec // stub must execute for the test
+	err = os.WriteFile(filepath.Join(dir, "bench.sh"), []byte(stub), 0o755)
 	if err != nil {
 		t.Fatalf("stub: %v", err)
 	}

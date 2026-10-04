@@ -32,7 +32,7 @@ func main() {
 
 	srv.Add(mcp.Tool{
 		Name:        "bench_run",
-		Description: "Fire N HTTP requests at the OTel lab and report counter delta, histogram buckets, one exemplar trace_id.",
+		Description: "Fire N requests at the OTel lab and report delta, buckets, one exemplar trace.",
 		Schema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{

@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+// Sentinel flakes: err113 forbids dynamic errors even in tests.
+var (
+	errBlip       = errors.New("blip")
+	errDown       = errors.New("down")
+	errAlwaysDown = errors.New("always down")
+)
+
 func TestCallSucceedsAfterFlakes(t *testing.T) {
 	t.Parallel()
 
@@ -16,7 +23,7 @@ func TestCallSucceedsAfterFlakes(t *testing.T) {
 		calls++
 
 		if calls < 3 {
-			return errors.New("blip")
+			return errBlip
 		}
 
 		return nil
@@ -38,7 +45,7 @@ func TestCallExhaustsAttempts(t *testing.T) {
 	err := Call(context.Background(), 3, time.Millisecond, false, nil, func(context.Context) error {
 		calls++
 
-		return errors.New("always down")
+		return errAlwaysDown
 	})
 	if !errors.Is(err, ErrExhausted) {
 		t.Fatalf("err = %v, want ErrExhausted", err)
@@ -62,7 +69,7 @@ func TestCallAbortsOnCancel(t *testing.T) {
 	start := time.Now()
 
 	err := Call(ctx, 10, time.Hour, false, nil, func(context.Context) error {
-		return errors.New("down")
+		return errDown
 	})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want context.Canceled unwrapped", err)
@@ -82,7 +89,7 @@ func TestCallJitterStillSucceeds(t *testing.T) {
 		calls++
 
 		if calls < 3 {
-			return errors.New("blip")
+			return errBlip
 		}
 
 		return nil

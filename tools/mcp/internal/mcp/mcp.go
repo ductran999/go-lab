@@ -57,7 +57,7 @@ type RPCError struct {
 type Tool struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Schema      any    `json:"inputSchema"`
+	Schema      any    `json:"inputSchema"` //nolint:tagliatelle // MCP wire names are camelCase by spec
 }
 
 // Handler runs a tool: args in, text out (or fail).
@@ -164,7 +164,7 @@ func (s *Server) hello(params json.RawMessage) map[string]any {
 	version := DefaultProtocol
 
 	var p struct {
-		ProtocolVersion string `json:"protocolVersion"`
+		ProtocolVersion string `json:"protocolVersion"` //nolint:tagliatelle // MCP wire names are camelCase by spec
 	}
 
 	err := json.Unmarshal(params, &p)

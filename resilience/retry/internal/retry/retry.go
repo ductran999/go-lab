@@ -62,7 +62,14 @@ func RetryableStatus(err error) bool {
 // errors.Is(err, context.Canceled) keeps working. Retryable or not
 // is fn's contract: return nil on success, an error worth retrying
 // otherwise (never retry a 400, always bound the attempts).
-func Call(ctx context.Context, attempts int, base time.Duration, jitter bool, retryable func(error) bool, fn func(context.Context) error) error {
+func Call(
+	ctx context.Context,
+	attempts int,
+	base time.Duration,
+	jitter bool,
+	retryable func(error) bool,
+	fn func(context.Context) error,
+) error {
 	if attempts < 1 {
 		attempts = 1
 	}
@@ -114,5 +121,5 @@ func backoff(base time.Duration, n int, jitter bool) time.Duration {
 		return capped
 	}
 
-	return time.Duration(rand.Int64N(int64(capped) + 1))
+	return time.Duration(rand.Int64N(int64(capped) + 1)) //nolint:gosec // jitter needs speed, not secrecy
 }

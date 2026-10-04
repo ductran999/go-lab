@@ -23,7 +23,8 @@ func ctxWithTrace() context.Context {
 func TestExemplarSurfaces(t *testing.T) {
 	t.Parallel()
 
-	if _, err := Setup(); err != nil {
+	_, err := Setup()
+	if err != nil {
 		t.Fatalf("setup: %v", err)
 	}
 
@@ -77,7 +78,8 @@ func TestExemplarSurfaces(t *testing.T) {
 func TestInflightReturnsToZero(t *testing.T) {
 	t.Parallel()
 
-	if _, err := Setup(); err != nil {
+	_, err := Setup()
+	if err != nil {
 		t.Fatalf("setup: %v", err)
 	}
 
