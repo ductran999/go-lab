@@ -25,6 +25,7 @@ func main() {
 	attempts := flag.Int("attempts", 5, "tries per client")
 	baseMs := flag.Int("baseMs", 50, "backoff base in ms")
 	fail := flag.Int("fail", 10, "server fails the first N hits")
+	path := flag.String("path", "flaky", "server endpoint (flaky, deny)")
 	flag.Parse()
 
 	if err := reset(*base, *fail); err != nil {
@@ -48,8 +49,8 @@ func main() {
 
 			defer cancel()
 
-			err := retry.Call(ctx, *attempts, time.Duration(*baseMs)*time.Millisecond, *jitter, func(ctx context.Context) error {
-				return get(ctx, *base+"/flaky")
+			err := retry.Call(ctx, *attempts, time.Duration(*baseMs)*time.Millisecond, *jitter, retry.RetryableStatus, func(ctx context.Context) error {
+				return get(ctx, *base+"/"+*path)
 			})
 			if err != nil {
 				failed.Add(1)
@@ -102,7 +103,7 @@ func get(ctx context.Context, url string) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("get %s: status %d", url, resp.StatusCode)
+		return &retry.StatusError{Status: resp.StatusCode, URL: url}
 	}
 
 	return nil

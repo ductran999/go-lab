@@ -60,6 +60,18 @@ func flaky(w http.ResponseWriter, _ *http.Request) {
 	_, _ = fmt.Fprint(w, `{"ok":true}`)
 }
 
+// deny always answers 403: the dead error retries must touch once
+// and never again (see the -path deny demo).
+func deny(w http.ResponseWriter, _ *http.Request) {
+	hits.Add(1)
+
+	bucket()
+
+	w.WriteHeader(http.StatusForbidden)
+
+	_, _ = fmt.Fprint(w, `{"ok":false,"why":"forbidden"}`)
+}
+
 // reset rearms: /reset?fail=N fails the next N hits from scratch.
 func reset(w http.ResponseWriter, r *http.Request) {
 	n := 0
@@ -103,6 +115,7 @@ func stats(w http.ResponseWriter, _ *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/flaky", flaky)
+	mux.HandleFunc("/deny", deny)
 	mux.HandleFunc("/reset", reset)
 	mux.HandleFunc("/stats", stats)
 

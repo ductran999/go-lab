@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"net/http"
 	"time"
 )
 
@@ -25,13 +26,43 @@ var ErrExhausted = errors.New("retries exhausted")
 // caller's patience (or its deadline).
 const maxDelay = 5 * time.Second
 
+// StatusError carries the HTTP status of a failed call so the
+// retry policy can classify it. Network failures never become a
+// StatusError — with no status to judge, they stay retryable.
+type StatusError struct {
+	Status int
+	URL    string
+}
+
+// Error implements error.
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("get %s: status %d", e.URL, e.Status)
+}
+
+// RetryableStatus encodes the matrix: timeouts and resets arrive as
+// plain errors (retry), 429/408/5xx retry bounded, 4xx never do.
+func RetryableStatus(err error) bool {
+	var status *StatusError
+	if !errors.As(err, &status) {
+		return true
+	}
+
+	if status.Status == http.StatusTooManyRequests ||
+		status.Status == http.StatusRequestTimeout ||
+		status.Status >= http.StatusInternalServerError {
+		return true
+	}
+
+	return false
+}
+
 // Call runs fn until it succeeds or attempts run out. The first try
 // is immediate; sleeps grow base, 2*base, 4*base... A cancelled
 // context aborts the sleep and returns ctx.Err unwrapped, so
 // errors.Is(err, context.Canceled) keeps working. Retryable or not
 // is fn's contract: return nil on success, an error worth retrying
 // otherwise (never retry a 400, always bound the attempts).
-func Call(ctx context.Context, attempts int, base time.Duration, jitter bool, fn func(context.Context) error) error {
+func Call(ctx context.Context, attempts int, base time.Duration, jitter bool, retryable func(error) bool, fn func(context.Context) error) error {
 	if attempts < 1 {
 		attempts = 1
 	}
@@ -46,6 +77,10 @@ func Call(ctx context.Context, attempts int, base time.Duration, jitter bool, fn
 
 		if ctx.Err() != nil {
 			return ctx.Err()
+		}
+
+		if retryable != nil && !retryable(err) {
+			return err
 		}
 
 		if n == attempts-1 {

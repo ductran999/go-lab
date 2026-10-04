@@ -12,7 +12,7 @@ func TestCallSucceedsAfterFlakes(t *testing.T) {
 
 	calls := 0
 
-	err := Call(context.Background(), 5, 5*time.Millisecond, false, func(context.Context) error {
+	err := Call(context.Background(), 5, 5*time.Millisecond, false, nil, func(context.Context) error {
 		calls++
 
 		if calls < 3 {
@@ -35,7 +35,7 @@ func TestCallExhaustsAttempts(t *testing.T) {
 
 	calls := 0
 
-	err := Call(context.Background(), 3, time.Millisecond, false, func(context.Context) error {
+	err := Call(context.Background(), 3, time.Millisecond, false, nil, func(context.Context) error {
 		calls++
 
 		return errors.New("always down")
@@ -61,7 +61,7 @@ func TestCallAbortsOnCancel(t *testing.T) {
 
 	start := time.Now()
 
-	err := Call(ctx, 10, time.Hour, false, func(context.Context) error {
+	err := Call(ctx, 10, time.Hour, false, nil, func(context.Context) error {
 		return errors.New("down")
 	})
 	if !errors.Is(err, context.Canceled) {
@@ -78,7 +78,7 @@ func TestCallJitterStillSucceeds(t *testing.T) {
 
 	calls := 0
 
-	err := Call(context.Background(), 5, time.Millisecond, true, func(context.Context) error {
+	err := Call(context.Background(), 5, time.Millisecond, true, nil, func(context.Context) error {
 		calls++
 
 		if calls < 3 {
@@ -93,6 +93,50 @@ func TestCallJitterStillSucceeds(t *testing.T) {
 
 	if calls != 3 {
 		t.Fatalf("calls = %d, want 3 (2 flakes then success)", calls)
+	}
+}
+
+func TestCallStopsOnNonRetryable(t *testing.T) {
+	t.Parallel()
+
+	calls := 0
+
+	err := Call(context.Background(), 5, time.Millisecond, true, RetryableStatus, func(context.Context) error {
+		calls++
+
+		return &StatusError{Status: 403, URL: "/deny"}
+	})
+
+	var status *StatusError
+	if !errors.As(err, &status) || status.Status != 403 {
+		t.Fatalf("err = %v, want the original 403 unretried", err)
+	}
+
+	if calls != 1 {
+		t.Fatalf("calls = %d, want 1 (dead errors stop at once)", calls)
+	}
+}
+
+func TestCallRetriesRetryableStatus(t *testing.T) {
+	t.Parallel()
+
+	calls := 0
+
+	err := Call(context.Background(), 5, time.Millisecond, true, RetryableStatus, func(context.Context) error {
+		calls++
+
+		if calls < 3 {
+			return &StatusError{Status: 503, URL: "/flaky"}
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("call: %v", err)
+	}
+
+	if calls != 3 {
+		t.Fatalf("calls = %d, want 3 (2x503 then success)", calls)
 	}
 }
 

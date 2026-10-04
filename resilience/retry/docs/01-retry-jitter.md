@@ -40,4 +40,4 @@
 | uncapped sleep → outlives deadline | cap 5s             |
 | retry 403/400 → false traffic      | never retry dead   |
 | plain POST retry → double-charge   | idempotency key    |
-| ignore ctx → work after give-up    | propagate ctx      |
+| ignore ctx → work after give-up | propagate ctx |

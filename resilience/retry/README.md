@@ -27,6 +27,10 @@ go run ./cmd/client -n 10 -jitter=true -baseMs 100
 curl -s 'localhost:8122/reset?fail=100'
 go run ./cmd/client -n 2 -attempts 3
 # failed=2 — retries.exhausted, and that's correct: bounded loss
+
+# 4. Dead errors stop at once: 403 is never retried
+go run ./cmd/client -n 3 -path deny
+# failed=3, wall ~ms, server hits == 3 — one touch each, zero retries
 ```
 
 ## Docs
