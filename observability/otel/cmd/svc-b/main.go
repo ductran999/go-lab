@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
 
+	"go-lab/observability/otel/internal/metrics"
 	"go-lab/observability/otel/internal/middleware"
 	"go-lab/observability/otel/internal/requestid"
 	"go-lab/observability/otel/internal/server"
@@ -67,11 +68,37 @@ func main() {
 		_ = shutdown(ctx)
 	}()
 
+	prom, err := metrics.Setup()
+	if err != nil {
+		fail(err)
+	}
+
+	// Metrics on :2113 (svc-a holds :2112): same OTel-wired handler.
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", prom)
+
+		maddr := ":" + environ.Get("METRICS_PORT", "2113")
+
+		slog.Info("serving metrics", "addr", maddr)
+
+		msrv := &http.Server{
+			Addr:              maddr,
+			Handler:           mux,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+
+		_ = msrv.ListenAndServe()
+	}()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/work", work)
 
+	protected := http.NewServeMux()
+	protected.Handle("/work", middleware.Auth(middleware.Logging(mux)))
+
 	server.Run(
 		":"+environ.Get("PORT", "8111"),
-		requestid.Ensure(otelhttp.NewHandler(middleware.Auth(middleware.Logging(mux)), "svc-b")),
+		requestid.Ensure(otelhttp.NewHandler(protected, "svc-b")),
 	)
 }

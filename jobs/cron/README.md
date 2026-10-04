@@ -27,6 +27,8 @@ make escape  # prove `running` escapes to heap (closure outlives setup)
 - **SLI** (Indicator): the number — uptime 99.9%, p99 < 200ms.
 - **SLO** (Objective): internal target — keep SLI above 99.9%.
 - **SLA** (Agreement): contract with teeth — miss SLO, pay up.
+- Full treatment (instrumentation RED/USE/business):
+  `../../observability/otel/docs/02-slo-metrics.md`.
 - SLI measures → SLO promises in-house → SLA signs with customers.
 
 ## Why jitter (thundering herd)

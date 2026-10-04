@@ -51,6 +51,10 @@ TOKEN=$(curl -s -X POST localhost:8110/token \
 # Traced call (both services log auth + spans carry tenant/user)
 curl -s localhost:8110/start -H "Authorization: Bearer $TOKEN" | jq
 
+# Metrics (own ports :2112/:2113, no auth): counter + histogram
+curl -s localhost:2112/metrics | grep -E '^http_'
+curl -s localhost:2113/metrics | grep -E '^http_'
+
 # open http://localhost:16686 → svc-a → one trace, two spans with
 # tenant.id/user.id attributes
 ```
@@ -58,3 +62,4 @@ curl -s localhost:8110/start -H "Authorization: Bearer $TOKEN" | jq
 ## Docs
 
 - `docs/01-otel.md` — SDK, collector, propagation, sampling
+- `docs/02-slo-metrics.md` — SLI/SLO/SLA, RED/USE/business

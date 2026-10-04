@@ -14,6 +14,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"go.opentelemetry.io/otel/trace"
 
+	"go-lab/observability/otel/internal/metrics"
 	"go-lab/observability/otel/internal/requestid"
 	"go-lab/observability/otel/internal/tracing"
 )
@@ -39,6 +40,10 @@ func Logging(next http.Handler) http.Handler {
 		next.ServeHTTP(rec, r)
 
 		sc := trace.SpanFromContext(r.Context()).SpanContext()
+
+		elapsed := time.Since(start)
+
+		metrics.Current.Observe(r.Context(), r.URL.Path, rec.status, elapsed.Seconds())
 
 		slog.Info("http",
 			"method", r.Method, "path", r.URL.Path,

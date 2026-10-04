@@ -8,10 +8,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/trace"
 
+	"go-lab/observability/otel/internal/metrics"
 	"go-lab/observability/otel/internal/middleware"
 	"go-lab/observability/otel/internal/requestid"
 	"go-lab/observability/otel/internal/server"
@@ -19,6 +21,61 @@ import (
 
 	"github.com/ductran999/shared-pkg/environ"
 )
+
+func main() {
+	ctx := context.Background()
+
+	shutdown, err := tracing.Setup(ctx,
+		tracing.NewServiceInfo("svc-a", "1.0.0", "pipeline"),
+		environ.Get("OTEL_ENDPOINT", "localhost:4317"),
+	)
+	if err != nil {
+		fail(err)
+	}
+
+	defer func() {
+		_ = shutdown(ctx)
+	}()
+
+	prom, err := metrics.Setup()
+	if err != nil {
+		fail(err)
+	}
+
+	// Metrics on :2112 (convention, clear of Prometheus :9090): the
+	// Setup handler serves OUR instruments (not the empty default
+	// registry promhttp.Handler() would expose).
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", prom)
+
+		maddr := ":" + environ.Get("METRICS_PORT", "2112")
+
+		slog.Info("serving metrics", "addr", maddr)
+
+		msrv := &http.Server{
+			Addr:              maddr,
+			Handler:           mux,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+
+		_ = msrv.ListenAndServe()
+	}()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/start", start)
+
+	// /token stays outside Auth: you can't require a token to mint one.
+	// /metrics stays outside Auth too: scrapers don't log in.
+	// Chain: otelhttp (span) → Auth (identity) → Logging (the one
+	// log line) → mux.
+	public := http.NewServeMux()
+	public.Handle("/start", middleware.Auth(middleware.Logging(mux)))
+	public.HandleFunc("/token", token)
+
+	server.Run(":"+environ.Get("PORT", "8110"),
+		requestid.Ensure(otelhttp.NewHandler(public, "svc-a")))
+}
 
 func fail(err error) {
 	slog.Error("server failed", "error", err)
@@ -104,33 +161,4 @@ func start(w http.ResponseWriter, r *http.Request) {
 		"trace_id":   span.SpanContext().TraceID().String(),
 		"request_id": requestid.Of(ctx),
 	})
-}
-
-func main() {
-	ctx := context.Background()
-
-	shutdown, err := tracing.Setup(ctx,
-		tracing.NewServiceInfo("svc-a", "1.0.0", "pipeline"),
-		environ.Get("OTEL_ENDPOINT", "localhost:4317"),
-	)
-	if err != nil {
-		fail(err)
-	}
-
-	defer func() {
-		_ = shutdown(ctx)
-	}()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/start", start)
-
-	// /token stays outside Auth: you can't require a token to mint one.
-	// Chain: otelhttp (span) → Auth (identity) → Logging (the one
-	// log line) → mux.
-	public := http.NewServeMux()
-	public.Handle("/start", middleware.Auth(middleware.Logging(mux)))
-	public.HandleFunc("/token", token)
-
-	server.Run(":"+environ.Get("PORT", "8110"),
-		requestid.Ensure(otelhttp.NewHandler(public, "svc-a")))
 }
