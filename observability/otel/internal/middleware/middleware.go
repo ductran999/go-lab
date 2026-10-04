@@ -36,6 +36,9 @@ func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
+		done := metrics.Current.Track(r.URL.Path)
+		defer done()
+
 		rec := &recorder{writer: w, status: http.StatusOK}
 		next.ServeHTTP(rec, r)
 
@@ -43,7 +46,7 @@ func Logging(next http.Handler) http.Handler {
 
 		elapsed := time.Since(start)
 
-		metrics.Current.Observe(r.Context(), r.URL.Path, rec.status, elapsed.Seconds())
+		metrics.Current.Observe(r.Context(), r.URL.Path, rec.status, elapsed.Seconds(), rec.written)
 
 		slog.Info("http",
 			"method", r.Method, "path", r.URL.Path,
@@ -184,8 +187,9 @@ func respUnAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 type recorder struct {
-	writer http.ResponseWriter
-	status int
+	writer  http.ResponseWriter
+	status  int
+	written int
 }
 
 func (r *recorder) Header() http.Header {
@@ -193,7 +197,10 @@ func (r *recorder) Header() http.Header {
 }
 
 func (r *recorder) Write(b []byte) (int, error) {
-	return r.writer.Write(b)
+	n, err := r.writer.Write(b)
+	r.written += n
+
+	return n, err
 }
 
 func (r *recorder) WriteHeader(status int) {

@@ -1,68 +1,112 @@
-// Package metrics exposes Prometheus counters + histograms for the
-// demo services: requests total and duration, labeled by route.
-// One /metrics scrape endpoint per binary (no collector hop).
+// Package metrics exposes Prometheus counters + histograms with
+// exemplars: every sample carries its trace.id, so a graph spike
+// jumps straight to the Jaeger waterfall. Native client_golang
+// (OTel SDK v1.44 doesn't attach exemplars itself).
 package metrics
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/metric"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
-// Recorder counts requests and durations. Built once by Setup.
-type Recorder struct {
-	requests metric.Int64Counter
-	duration metric.Float64Histogram
+var (
+	requests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "total requests by route and status",
+		},
+		[]string{"route", "status"},
+	)
+	duration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "request duration by route",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"route", "status"},
+	)
+	inflight = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "http_inflight_requests",
+			Help: "requests currently being served by route",
+		},
+		[]string{"route"},
+	)
+	respSize = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name:       "http_response_size_bytes",
+			Help:       "response size by route",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		},
+		[]string{"route"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requests, duration, inflight, respSize)
 }
 
-// Current is the process recorder (set by Setup).
-var Current *Recorder
+// Handler serves /metrics (own ports :2112/:2113, no auth).
+// EnableOpenMetrics: exemplars are only emitted in OpenMetrics format.
+func Handler() http.Handler {
+	reg := prometheus.DefaultGatherer
+	return promhttp.HandlerFor(reg, promhttp.HandlerOpts{EnableOpenMetrics: true})
+}
 
-// Setup registers the Prometheus exporter as global meter provider and
-// returns the scrape handler. Call once in main.
+// Recorder is kept for API shape (no state: instruments are global).
+type Recorder struct{}
+
+// Current is the process recorder (set by Setup for compatibility).
+var Current = &Recorder{}
+
+// Setup exists so mains keep one call; instruments register at init.
 func Setup() (http.Handler, error) {
-	exporter, err := prometheus.New()
-	if err != nil {
-		return nil, fmt.Errorf("metrics: exporter: %w", err)
-	}
+	Current = &Recorder{}
 
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
-	meter := provider.Meter("demo")
-
-	requests, err := meter.Int64Counter("http_requests_total",
-		metric.WithDescription("total requests by route and status"))
-	if err != nil {
-		return nil, fmt.Errorf("metrics: counter: %w", err)
-	}
-
-	duration, err := meter.Float64Histogram("http_request_duration_seconds",
-		metric.WithDescription("request duration by route"))
-	if err != nil {
-		return nil, fmt.Errorf("metrics: histogram: %w", err)
-	}
-
-	Current = &Recorder{requests: requests, duration: duration}
-
-	return promhttp.Handler(), nil
+	return Handler(), nil
 }
 
-// Observe records one request (route pattern, status, seconds).
-func (r *Recorder) Observe(ctx context.Context, route string, status int, seconds float64) {
+// Track marks one request in-flight: call at entry, defer the
+// returned done until the response is written. A gauge that never
+// returns to 0 after load is a leak (forgotten Dec, stuck handler).
+func (r *Recorder) Track(route string) func() {
+	noop := func() {}
+
+	if r == nil {
+		return noop
+	}
+
+	g := inflight.With(prometheus.Labels{"route": route})
+	g.Inc()
+
+	return g.Dec
+}
+
+// Observe records one finished request: counter + histogram carry the
+// trace exemplar, summary tracks response size (local quantiles only —
+// summaries never aggregate across replicas).
+func (r *Recorder) Observe(ctx context.Context, route string, status int, seconds float64, respBytes int) {
 	if r == nil {
 		return
 	}
 
-	attrs := []attribute.KeyValue{
-		attribute.String("route", route),
-		attribute.Int("status", status),
+	sc := trace.SpanFromContext(ctx).SpanContext()
+	traceID := sc.TraceID().String()
+	labels := prometheus.Labels{"route": route, "status": strconv.Itoa(status)}
+	exemplar := prometheus.Labels{"trace_id": traceID}
+
+	if adder, ok := requests.With(labels).(prometheus.ExemplarAdder); ok {
+		adder.AddWithExemplar(1, exemplar)
 	}
 
-	r.requests.Add(ctx, 1, metric.WithAttributes(attrs...))
-	r.duration.Record(ctx, seconds, metric.WithAttributes(attrs...))
+	if observer, ok := duration.With(labels).(prometheus.ExemplarObserver); ok {
+		observer.ObserveWithExemplar(seconds, exemplar)
+	}
+
+	respSize.With(prometheus.Labels{"route": route}).Observe(float64(respBytes))
 }

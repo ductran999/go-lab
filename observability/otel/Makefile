@@ -1,4 +1,4 @@
-.PHONY: default help build run-a run-b up down
+.PHONY: default help build run-a run-b up down bench
 
 default: ## show all available tasks
 	@make help
@@ -26,3 +26,6 @@ up-with-badger: ## start persistent jaeger (Badger on disk, UI :16688, OTLP :431
 
 down: ## stop collector + jaeger
 	docker compose down
+
+bench: ## load svc-a (N C, defaults 200 20) then verify metrics moved
+	./bench.sh $(N) $(C)
