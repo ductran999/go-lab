@@ -31,13 +31,13 @@
 
 ## 3. Hedging the tail
 
-|                             |                                                          |
-| --------------------------- | -------------------------------------------------------- |
-| ✅ Second flight at ~p95    | cuts the tail without doubling the median load           |
-| ✅ First success wins | the loser always dies by cancel |
+|                                    |                                                                  |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| ✅ Second flight at ~p95           | cuts the tail without doubling the median load                   |
+| ✅ First success wins              | the loser always dies by cancel                                  |
 | ✅ Cancel the loser, not the first | fast primary = no hedge fired; winning primary = hedge cancelled |
-| 🪙 Hedge POST               | a second write may double-charge — idempotent reads only |
-| 🪙 Hedge a saturated server | extra load deepens the hole it was meant to escape       |
+| 🪙 Hedge POST                      | a second write may double-charge — idempotent reads only         |
+| 🪙 Hedge a saturated server        | extra load deepens the hole it was meant to escape               |
 
 ## 4. Cause → consequence
 
@@ -47,7 +47,7 @@
 | too-tight timeout → false errors on healthy traffic | budget from p99 + headroom       |
 | no propagation → server burns for a gone client     | `ctx` end to end, stop on `Done` |
 | hedge without cancel → permanent 2x load            | cancel the loser, always         |
-| hedge saturated downstream → deeper hole | hedge only with headroom |
+| hedge saturated downstream → deeper hole            | hedge only with headroom         |
 
 ## 5. Option: stale on timeout
 
@@ -58,3 +58,21 @@ N minutes past which stale is worse than error. Niche, not default
 beats error (feeds, catalog, DNS, CDN edge: RFC 5861
 `stale-while-revalidate` / `stale-if-error`). Ordinary CRUD:
 timeout + error + retry wins by simplicity.
+
+## 6. Server side — timeouts against dirty clients
+
+Clients can also hang the server: every held connection is a
+worker that never returns. (Our labs set `ReadHeaderTimeout: 5s`
+for exactly this.)
+
+| Timeout               | Stops                                                                  |
+| --------------------- | ---------------------------------------------------------------------- |
+| `ReadHeaderTimeout`   | Slowloris — header drip holding connections open                       |
+| `ReadTimeout`         | slow body drip (giant POST arriving byte by byte)                      |
+| `WriteTimeout`        | slow reader — handler done but client sips the response                |
+| `IdleTimeout`         | clinically-dead keep-alive hogging a slot                              |
+| `http.TimeoutHandler` | stuck handler (hung DB) — 503 after X, ctx cancelled                   |
+| shutdown drain (30s)  | deploy killing in-flight — SIGTERM stops new, finishes old, then kills |
+
+🪙 `WriteTimeout` kills SSE/streaming (long-lived by design) —
+exempt those routes or scope the timeout per handler, never global.

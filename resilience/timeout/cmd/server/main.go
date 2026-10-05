@@ -5,6 +5,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -66,6 +67,10 @@ func stats(w http.ResponseWriter, _ *http.Request) {
 }
 
 func main() {
+	headerMs := flag.Int("header-ms", 5000, "max ms to read request headers (Slowloris guard)")
+
+	flag.Parse()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/slow", slow)
 	mux.HandleFunc("/fast", fast)
@@ -78,7 +83,7 @@ func main() {
 	server := &http.Server{
 		Addr:              addr,
 		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: time.Duration(*headerMs) * time.Millisecond,
 	}
 
 	err := server.ListenAndServe()

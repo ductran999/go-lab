@@ -34,3 +34,17 @@ go run ./cmd/client
 ## Docs
 
 - `docs/01-timeout-hedging.md` — why, tradeoff, budgets, hedging, cause
+
+## Slowloris proof (server + drip client, no test fakes)
+
+```bash
+# terminal 1: guarded server, 800ms header budget
+go run ./cmd/server -header-ms 800
+# terminal 2: drip one header line per 200ms, never finishing
+go run ./cmd/drip
+# server cut after 4 lines / ~800ms: write: connection reset by peer
+
+# unguarded: default 5s budget outlasts a short drip
+go run ./cmd/drip -lines 10
+# server still waiting after 10 lines / ~2s
+```
