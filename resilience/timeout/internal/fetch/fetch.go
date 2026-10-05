@@ -97,3 +97,46 @@ func DoHedged(ctx context.Context, primary, hedge string, hedgeAfter time.Durati
 
 	return second.body, nil
 }
+
+// DoFastest fires every url at once: the first success wins and the
+// losers die by context cancel. Hedging pays extra only on the tail;
+// racing pays len(urls)× on every request — race only idempotent
+// reads against replicas with headroom. All flights failing joins
+// the errors. Returns the winner's index alongside its body.
+func DoFastest(ctx context.Context, urls ...string) (string, int, error) {
+	if len(urls) == 0 {
+		return "", -1, fmt.Errorf("%w: no flights to race", ErrUpstream)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	defer cancel()
+
+	type result struct {
+		idx  int
+		body string
+		err  error
+	}
+
+	out := make(chan result, len(urls))
+
+	for i, u := range urls {
+		go func() {
+			body, err := Do(ctx, u)
+			out <- result{idx: i, body: body, err: err}
+		}()
+	}
+
+	var errs []error
+
+	for range urls {
+		res := <-out
+		if res.err == nil {
+			return res.body, res.idx, nil
+		}
+
+		errs = append(errs, res.err)
+	}
+
+	return "", -1, errors.Join(errs...)
+}

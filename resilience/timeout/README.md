@@ -9,6 +9,7 @@ finished — the gap is work abandoned by timeouts.
 ```bash
 make run-server  # downstream on :8121
 make run-client  # three calls: none, deadline, hedged
+make run-race    # three flights at once, fastest wins
 ```
 
 ## Try
@@ -29,6 +30,12 @@ go run ./cmd/client
 # 1. no deadline: took ~2s
 # 2. 300ms deadline: took ~300ms err=context deadline exceeded
 # 3. hedged after 300ms: took ~300ms + body {"ok":true}
+
+# 4. Race: /slow?ms=2000 vs /slow?ms=800 vs /fast — flight 2 wins
+go run ./cmd/race
+# winner: flight 2 (http://localhost:8121/fast) in ~ms: {"ok":true}
+curl -s localhost:8121/stats
+# {"started":3,"finished":1,"abandoned":2} — two losers cancelled
 ```
 
 ## Docs

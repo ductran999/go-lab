@@ -14,10 +14,44 @@ means no hedge fired; winning primary means the hedge is cancelled.
 
 ## Cause → consequence
 
-| ❌ Cause → consequence                   | ✅ Instead             |
-| ---------------------------------------- | ---------------------- |
-| hedge without cancel → permanent 2x load  | cancel the loser, always |
+| ❌ Cause → consequence                   | ✅ Instead               |
+| ---------------------------------------- | ------------------------ |
+| hedge without cancel → permanent 2x load | cancel the loser, always |
 | hedge saturated downstream → deeper hole | hedge only with headroom |
+
+## Fastest of N — hedging with all flights at once
+
+Not the tasty default — the last resort. Pecking order for the
+tail: right timeout first, hedge-on-tail second, race only when
+hedging still isn't fast enough. Worth it solely when p99 SLO
+outweighs server cost, replicas idle, AZ-decorrelated, and reads
+only; missing any one is over-engineering.
+
+Same request to N replicas simultaneously, first answer wins,
+losers cancelled.
+
+|                                      |                                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| ✅ Shortest tail physically possible | no waiting for p95 trigger — the race starts at 0ms                                                 |
+| ✅ Survives one slow replica         | straggler loses quietly, user never knows                                                           |
+| 🪙 Always N× load                    | every request costs N, even when all replicas fast                                                  |
+| 🪙 Correlated slowness wins          | same-AZ outage slows all flights equally — race decorrelated replicas (AZ/rack apart) or don't race |
+
+## Scope: effectively-once only
+
+|                                  |                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| ✅ Safe reads (GET/HEAD/OPTIONS) | no side effects — race freely                                                       |
+| ⚠️ Keyed writes                  | idempotency key + server-side dedup required (key dedups the loser, not the cancel) |
+| ❌ Plain writes                  | the loser may commit before cancel lands — cancel stops waiting, never undoes       |
+
+## Counting: demand vs load
+
+One race = 1 demand but N flights of load (losers burn real
+server work). Tag hedge flights (`X-Hedged: true`, label
+`hedged=true` — never a route label) and count both: demand for
+traffic truth, load for capacity planning. Budget the race ratio
+(only the requests whose p99 matters) instead of racing everything.
 
 ## Option: stale on timeout
 

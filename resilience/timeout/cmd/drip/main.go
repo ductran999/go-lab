@@ -46,6 +46,7 @@ func run() error {
 
 	for i := range *lines {
 		time.Sleep(time.Duration(*every) * time.Millisecond)
+
 		header := fmt.Sprintf("X-Drip-%d: y\r\n", i)
 		log.Printf("drip %d: %s", i, header)
 
@@ -59,7 +60,7 @@ func run() error {
 		// 	return nil
 		// }
 
-		_, err = fmt.Fprintf(conn, header)
+		_, err = fmt.Fprint(conn, header)
 		if err != nil {
 			fmt.Printf("server cut after %d lines / %v: %v\n", i, time.Since(start).Round(time.Millisecond), err)
 
