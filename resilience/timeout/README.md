@@ -33,7 +33,9 @@ go run ./cmd/client
 
 ## Docs
 
-- `docs/01-timeout-hedging.md` — why, tradeoff, budgets, hedging, cause
+- `docs/01-timeout.md` — why, tradeoff, budgets, deadline vs cancel
+- `docs/02-hedging.md` — hedging, stale option
+- `docs/03-server-side.md` — Slowloris and server guards
 
 ## Slowloris proof (server + drip client, no test fakes)
 
