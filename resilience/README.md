@@ -7,6 +7,7 @@
 
 | Lab | Solves | Port |
 |---|---|---|
+| `timeout/` | deadline propagation, hedging the tail | `:8121` |
 | `retry/` | backoff + jitter, retry budgets | `:8122` |
 
 Rule of the pillar: every lab runs a flaky downstream next to
