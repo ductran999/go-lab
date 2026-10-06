@@ -3,6 +3,13 @@
 Server on `:8123`. `/hot?ms=N` burns N ms per query and counts
 executions, `/stats` shows the count, `/reset` zeroes it.
 
+```
+20 callers, same key "hot-item", -fly=true
+  ├─▶ caller 1 (leader) ──▶ 1 origin query
+  ├─▶ caller 2..20 (followers) ──▶ wait + share leader's answer
+  └─▶ server sees: {"queries":1}   (without: {"queries":20})
+```
+
 ## Run
 
 ```bash
