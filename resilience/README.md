@@ -11,6 +11,7 @@
 | `retry/` | backoff + jitter, retry budgets | `:8122` |
 | `singleflight/` | collapsing identical in-flight requests | `:8123` |
 | `breaker/` | fail fast on dead downstream, probe recovery | `:8124` |
+| `bulkhead/` | pool isolation per downstream | `:8125` |
 
 Rule of the pillar: every lab runs a flaky downstream next to
 the client, counts what happened (`/stats`), and proves the
