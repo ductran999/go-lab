@@ -35,10 +35,11 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run GolangCI-Lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          args: --timeout 5m --config .golangci.yml
-          version: v2.6.2
+        # Pinned binary releases lag the repo Go version (prebuilt with
+        # older Go panics loading go1.26 packages). Build v2.6.2 from
+        # source with the setup-go toolchain instead: same version,
+        # matching toolchain, zero new-linter risk.
+        run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.2 run --timeout 5m --config .golangci.yml
 
   secret-scan:
     name: gitleaks
