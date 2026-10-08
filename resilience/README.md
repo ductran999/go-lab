@@ -13,6 +13,7 @@
 | `breaker/` | fail fast on dead downstream, probe recovery | `:8124` |
 | `bulkhead/` | pool isolation per downstream | `:8125` |
 | `ratelimit/` | client-side bucket pacing my own calls | `:8126` |
+| `fallback/` | bounded degrade: stale, default, honest error | `:8127` |
 
 Rule of the pillar: every lab runs a flaky downstream next to
 the client, counts what happened (`/stats`), and proves the

@@ -1,0 +1,6 @@
+services:
+  redis:
+    image: redis:8.2-m01-alpine
+    ports:
+      - "6379:6379" # shared last-good copy (stop storage/cache stack if it holds this port)
+    command: ["redis-server", "--save", "", "--appendonly", "no"] # demo data only: nothing persisted
